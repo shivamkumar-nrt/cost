@@ -1,0 +1,105 @@
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="selector"></th>
+        <th>Year</th>
+        <th>Location</th>
+        <th>Sector</th>
+        <th>Category</th>
+        <th>Short Item Specification</th>
+        <th>Vendor Name</th>
+        <th>MoC</th>
+        <th>UoM</th>
+        <th class="rate-col">
+          Total Rate
+          <button class="table-add-btn">+</button>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="input-row">
+        <td class="selector">
+          <input type="checkbox" [checked]="inputRow.selected" disabled />
+        </td>
+        <td><input type="text" [(ngModel)]="inputRow.year" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.location" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.sector" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.category" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.item" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.vendor" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.uom" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.rate" /></td>
+      </tr>
+
+      <tr *ngFor="let row of pagedRows" [class.selected]="row.selected">
+        <td class="selector">
+          <input type="checkbox" [checked]="row.selected" (change)="toggleEdit(row)" />
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawYearText">
+            <input type="text" [(ngModel)]="row.year" />
+          </ng-container>
+          <ng-template #rawYearText>{{ row.year }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawLocationText">
+            <input type="text" [(ngModel)]="row.location" />
+          </ng-container>
+          <ng-template #rawLocationText>{{ row.location }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawSectorText">
+            <input type="text" [(ngModel)]="row.sector" />
+          </ng-container>
+          <ng-template #rawSectorText>{{ row.sector }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawCategoryText">
+            <input type="text" [(ngModel)]="row.category" />
+          </ng-container>
+          <ng-template #rawCategoryText>{{ row.category }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawItemText">
+            <input type="text" [(ngModel)]="row.item" />
+          </ng-container>
+          <ng-template #rawItemText>{{ row.item }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawVendorText">
+            <input type="text" [(ngModel)]="row.vendor" />
+          </ng-container>
+          <ng-template #rawVendorText>{{ row.vendor }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawMocText">
+            <input type="text" [(ngModel)]="row.moc" />
+          </ng-container>
+          <ng-template #rawMocText>{{ row.moc }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawUomText">
+            <input type="text" [(ngModel)]="row.uom" />
+          </ng-container>
+          <ng-template #rawUomText>{{ row.uom }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.selected; else rawRateText">
+            <input type="number" [(ngModel)]="row.rate" />
+          </ng-container>
+          <ng-template #rawRateText>{{ row.rate | number: '1.2-2' }}</ng-template>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>{{ startItem }} - {{ endItem }} of {{ rows.length }} items</span>
+    <div class="pager">
+      <button type="button" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    </div>
+  </div>
+</div>

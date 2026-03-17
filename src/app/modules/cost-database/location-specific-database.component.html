@@ -1,0 +1,116 @@
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="selector"> </th>
+        <th>Year</th>
+        <th>Sector</th>
+        <th>Project Location</th>
+        <th>Category</th>
+        <th>Short Item Specification</th>
+        <th>Vendor Name</th>
+        <th>MoC</th>
+        <th>UoM</th>
+        <th class="rate-col">
+          Total Rate
+          <button class="table-add-btn">+</button>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="input-row">
+        <td class="selector">
+          <input type="checkbox" [checked]="inputRow.selected" disabled />
+        </td>
+        <td><input type="text" [(ngModel)]="inputRow.year" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.sector" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.projectLocation" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.category" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.shortItemSpecification" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.vendorName" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.uom" /></td>
+        <td>
+          <input type="number" [(ngModel)]="inputRow.totalRate" />
+        </td>
+      </tr>
+
+      <tr *ngFor="let row of pagedRows" [class.selected]="row.selected">
+        <td class="selector">
+          <input type="checkbox" [checked]="row.selected" (change)="toggleEdit(row)" />
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textYear">
+            <input type="text" [(ngModel)]="row.year" />
+          </ng-container>
+          <ng-template #textYear>{{ row.year }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textSector">
+            <input type="text" [(ngModel)]="row.sector" />
+          </ng-container>
+          <ng-template #textSector>{{ row.sector }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textProject">
+            <input type="text" [(ngModel)]="row.projectLocation" />
+          </ng-container>
+          <ng-template #textProject>{{ row.projectLocation }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textCategory">
+            <input type="text" [(ngModel)]="row.category" />
+          </ng-container>
+          <ng-template #textCategory>{{ row.category }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textItem">
+            <input type="text" [(ngModel)]="row.shortItemSpecification" />
+          </ng-container>
+          <ng-template #textItem>{{ row.shortItemSpecification }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textVendor">
+            <input type="text" [(ngModel)]="row.vendorName" />
+          </ng-container>
+          <ng-template #textVendor>{{ row.vendorName }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textMoc">
+            <input type="text" [(ngModel)]="row.moc" />
+          </ng-container>
+          <ng-template #textMoc>{{ row.moc }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textUom">
+            <input type="text" [(ngModel)]="row.uom" />
+          </ng-container>
+          <ng-template #textUom>{{ row.uom }}</ng-template>
+        </td>
+
+        <td>
+          <ng-container *ngIf="row.selected; else textRate">
+            <input type="number" [(ngModel)]="row.totalRate" />
+          </ng-container>
+          <ng-template #textRate>{{ row.totalRate | number: '1.2-2' }}</ng-template>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>{{ startItem }} - {{ endItem }} of {{ rows.length }} items</span>
+    <div class="pager">
+      <button type="button" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    </div>
+  </div>
+</div>
