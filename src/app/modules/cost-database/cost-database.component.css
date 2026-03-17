@@ -386,19 +386,32 @@
   .toolbar-row {
     flex-wrap: wrap;
     gap: 15px;
+    padding: 15px;
+  }
+
+  .import-group {
+    flex: 0 0 auto;
   }
 
   .filter-group {
-    flex: 1 1 100%;
-    order: 2;
+    flex: 1 1 auto;
+    justify-content: flex-end;
   }
 
   .toolbar-actions {
     flex: 1 1 100%;
     justify-content: space-between;
     order: 3;
-    padding-top: 10px;
+    padding-top: 15px;
     border-top: 1px dashed #e2e8f0;
+  }
+}
+
+@media (max-width: 992px) {
+  .filter-group {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    order: 2;
   }
 }
 
@@ -410,15 +423,19 @@
   .db-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 15px;
+    margin-bottom: 20px;
   }
 
   .header-right {
     width: 100%;
+    flex-direction: column;
+    gap: 8px;
   }
 
-  .header-right button {
-    flex: 1;
+  .ai-btn,
+  .analytics-btn {
+    width: 100%;
     justify-content: center;
   }
 
@@ -426,9 +443,15 @@
     padding: 12px;
   }
 
+  .import-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .filter-group {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .select-with-icon input {
@@ -437,50 +460,64 @@
 
   .select-with-label {
     justify-content: space-between;
+    background: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
   }
 
   .select-with-label select {
     flex: 1;
-    max-width: 180px;
+    max-width: none;
+    border: none;
+    background: transparent;
+    text-align: right;
   }
 
   .toolbar-actions {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 12px;
   }
 
   .icon-actions {
-    justify-content: center;
+    justify-content: space-around;
     border-right: none;
     padding-right: 0;
-    padding-bottom: 10px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #e2e8f0;
   }
 
   .tabs {
     overflow-x: auto;
     white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
   }
 
   .tabs button {
     flex: 0 0 auto;
-    padding: 10px 15px;
+    padding: 12px 18px;
   }
 
   .tab-sub-header {
-    padding: 8px 12px;
+    justify-content: center;
+    padding: 10px;
   }
 }
 
 @media (max-width: 480px) {
-  .header-right {
-    flex-direction: column;
+  .toolbar-year-selector select {
+    min-width: 80px;
   }
 
-  .ai-btn,
-  .analytics-btn {
-    width: 100%;
+  .ghost-btn {
+    padding: 0 8px;
   }
 }

@@ -129,3 +129,33 @@ input[type="number"] {
   background: #f8fafc;
   border-color: #94a3b8;
 }
+
+/* Table Responsiveness Minor Tweaks */
+@media (max-width: 768px) {
+  thead th {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  tbody td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .pager {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pager button {
+    flex: 1;
+    max-width: 120px;
+  }
+}
