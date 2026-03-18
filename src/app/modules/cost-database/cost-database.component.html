@@ -10,7 +10,8 @@
   </header>
 
   <div class="toolbar-row">
-    <button class="ghost-btn" type="button" (click)="openImportModal()"><span class="icon">📥</span> Import data</button>
+    <button class="ghost-btn" type="button" (click)="openImportModal()"><span class="icon">📥</span> Import
+      data</button>
 
     <div class="filter-group">
       <div class="select-with-icon">
@@ -34,10 +35,7 @@
           <option *ngFor="let vendor of vendors" [value]="vendor">{{ vendor }}</option>
         </select>
       </div>
-      <div class="toolbar-autocomplete">
-        <app-autocomplete [(ngModel)]="selectedCategory" (ngModelChange)="updateFilters()" [options]="categoryOptions"
-          placeholder="Select Category" width="180px"></app-autocomplete>
-      </div>
+
     </div>
 
     <div class="toolbar-actions">
@@ -91,56 +89,89 @@
 
   <div class="filter-overlay" *ngIf="isFilterSidebarOpen" (click)="closeFilterSidebar()"></div>
   <aside class="filter-sidebar" [class.open]="isFilterSidebarOpen">
+
+    <!-- Sidebar Header -->
     <div class="sidebar-head">
-      <div>
-        <h3>Filters</h3>
-        <p class="sidebar-sub">{{ activeTabLabel }}</p>
-      </div>
+      <h3>Filter By</h3>
       <button type="button" class="close-sidebar-btn" (click)="closeFilterSidebar()">✕</button>
     </div>
 
+    <!-- Sidebar Body -->
     <div class="sidebar-content">
+
+      <!-- Category Select -->
       <div class="filter-field">
-        <label>Year</label>
-        <select [(ngModel)]="selectedYear">
-          <option *ngFor="let year of financialYears" [value]="year">{{ year }}</option>
-        </select>
+        <label>Select via category</label>
+        <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" placeholder="Category Select"
+          width="100%"></app-autocomplete>
       </div>
 
+      <!-- Sub-Category Select -->
       <div class="filter-field">
-        <label>Location</label>
-        <select [(ngModel)]="selectedLocation">
-          <option *ngFor="let location of locations" [value]="location">{{ location }}</option>
-        </select>
+        <label>Select via sub - category</label>
+        <app-autocomplete [(ngModel)]="selectedSubCategory" [options]="subCategories" placeholder="Category Select"
+          width="100%"></app-autocomplete>
       </div>
 
+      <!-- Item Name Select -->
       <div class="filter-field">
-        <label>Vendor</label>
-        <select [(ngModel)]="selectedVendor">
-          <option *ngFor="let vendor of vendors" [value]="vendor">{{ vendor }}</option>
-        </select>
+        <label>Select specific Item Name</label>
+        <app-autocomplete [(ngModel)]="selectedItemName" [options]="itemNames" placeholder="Item Name"
+          width="100%"></app-autocomplete>
       </div>
 
+      <!-- UoM -->
       <div class="filter-field">
-        <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" label="Category"
-          placeholder="Choose Category" width="100%"></app-autocomplete>
+        <label>UoM</label>
+        <div class="uom-toggle">
+          <button type="button" [class.uom-active]="uomMode === 'set'" (click)="uomMode = 'set'">Set Type</button>
+          <button type="button" [class.uom-active]="uomMode === 'no'" (click)="uomMode = 'no'">No. Type</button>
+        </div>
+        <div class="uom-chips">
+          <button type="button" *ngFor="let uom of uomOptions" class="uom-chip"
+            [class.selected]="selectedUoms.includes(uom)" (click)="toggleUom(uom)">{{ uom }}</button>
+        </div>
       </div>
 
+      <!-- Project Type -->
       <div class="filter-field">
-        <label>Keyword</label>
-        <input type="text" [(ngModel)]="selectedKeyword" placeholder="Item / Vendor / MoC" />
+        <label>Project Type</label>
+        <div class="radio-group-filter">
+          <label class="radio-option">
+            <input type="radio" name="projectType" [(ngModel)]="projectType" value="within" />
+            <span class="radio-dot"></span>
+            Within India
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="projectType" [(ngModel)]="projectType" value="outside" />
+            <span class="radio-dot"></span>
+            Outside India
+          </label>
+        </div>
       </div>
+
+      <!-- Unit Rate Range -->
+      <div class="filter-field">
+        <label>Unit Rate Range ( in ₹)</label>
+        <div class="range-slider-wrap">
+          <input type="range" class="range-slider" [min]="1000" [max]="1000000" [step]="1000" [(ngModel)]="minRate" />
+          <div class="range-labels">
+            <span>₹{{ minRate | number }}</span>
+            <span>₹10,00,000</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
+    <!-- Sidebar Footer -->
     <div class="sidebar-footer">
+      <button type="button" class="apply-btn" (click)="applyFilters()">Apply Now</button>
       <button type="button" class="reset-btn" (click)="clearSidebarFilters()">Reset</button>
-      <button type="button" class="apply-btn" (click)="applyFilters()">Apply</button>
     </div>
+
   </aside>
 
-  <app-import-modal 
-    *ngIf="showImportModal" 
-    (close)="closeImportModal()" 
-    (upload)="handleImport($event)"
-  ></app-import-modal>
+  <app-import-modal *ngIf="showImportModal" (close)="closeImportModal()"
+    (upload)="handleImport($event)"></app-import-modal>
 </section>

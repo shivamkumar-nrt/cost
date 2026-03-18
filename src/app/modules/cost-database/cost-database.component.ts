@@ -29,18 +29,32 @@ export class CostDatabaseComponent {
   selectedLocation = 'All';
   selectedVendor = 'All';
   selectedCategory = 'All';
+  selectedSubCategory = '';
+  selectedItemName = '';
   selectedKeyword = '';
+  uomMode: 'set' | 'no' = 'set';
+  selectedUoms: string[] = [];
+  projectType: 'within' | 'outside' = 'within';
+  minRate = 1000;
+  maxRate = 1000000;
+
   appliedYear = '';
   appliedLocation = '';
   appliedVendor = '';
   appliedCategory = '';
   appliedKeyword = '';
+  appliedMinRate = 1000;
+  appliedMaxRate = 1000000;
   activeTab: TabKey = 'location-specific';
   sortDirection: SortDirection = 'asc';
   filterToken = 0;
   sortToken = 0;
   isFilterSidebarOpen = false;
   showImportModal = false;
+
+  readonly subCategories = ['All', 'Sub Cat 1', 'Sub Cat 2', 'Sub Cat 3'];
+  readonly itemNames = ['All', 'Item A', 'Item B', 'Item C'];
+  readonly uomOptions = ['Kg', 'Meter', 'sq. ft', 'liter', 'mm'];
 
   // Demo response structure - ready for API integration
   readonly categoryApiResponse = {
@@ -133,8 +147,23 @@ export class CostDatabaseComponent {
     this.selectedYear = 'All';
     this.selectedLocation = 'All';
     this.selectedVendor = 'All';
-    this.selectedCategory = 'All';
+    this.selectedCategory = '';
+    this.selectedSubCategory = '';
+    this.selectedItemName = '';
     this.selectedKeyword = '';
+    this.selectedUoms = [];
+    this.uomMode = 'set';
+    this.projectType = 'within';
+    this.minRate = 1000;
+  }
+
+  toggleUom(uom: string): void {
+    const idx = this.selectedUoms.indexOf(uom);
+    if (idx === -1) {
+      this.selectedUoms = [...this.selectedUoms, uom];
+    } else {
+      this.selectedUoms = this.selectedUoms.filter(u => u !== uom);
+    }
   }
 
   deleteSelectedRows(): void {
