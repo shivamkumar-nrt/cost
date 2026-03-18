@@ -10,7 +10,7 @@
   </header>
 
   <div class="toolbar-row">
-    <button class="ghost-btn" type="button"><span class="icon">📤</span> Import data</button>
+    <button class="ghost-btn" type="button" (click)="openImportModal()"><span class="icon">📥</span> Import data</button>
 
     <div class="filter-group">
       <div class="select-with-icon">
@@ -50,7 +50,7 @@
         <button type="button" class="icon-only-btn" title="Edit" (click)="editSelectedRows()">✏️</button>
       </div>
 
-      <button type="button" class="ghost-btn"><span class="icon">📥</span> Export data</button>
+      <button type="button" class="ghost-btn"><span class="icon">📤</span> Export data</button>
       <button type="button" class="add-btn" (click)="addRowToActiveTab()">+ Add</button>
       <button type="button" class="ghost-btn" (click)="openFilterSidebar()">
         <span class="icon">≡</span> Filter By
@@ -137,4 +137,10 @@
       <button type="button" class="apply-btn" (click)="applyFilters()">Apply</button>
     </div>
   </aside>
+
+  <app-import-modal 
+    *ngIf="showImportModal" 
+    (close)="closeImportModal()" 
+    (upload)="handleImport($event)"
+  ></app-import-modal>
 </section>

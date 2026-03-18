@@ -40,6 +40,7 @@ export class CostDatabaseComponent {
   filterToken = 0;
   sortToken = 0;
   isFilterSidebarOpen = false;
+  showImportModal = false;
 
   // Demo response structure - ready for API integration
   readonly categoryApiResponse = {
@@ -105,6 +106,20 @@ export class CostDatabaseComponent {
     this.locationTab?.toggleAddRow();
   }
 
+  openImportModal(): void {
+    this.showImportModal = true;
+  }
+
+  closeImportModal(): void {
+    this.showImportModal = false;
+  }
+
+  handleImport(data: { file: File | null; type: 'append' | 'replace' }): void {
+    console.log('Import data:', data);
+    // Placeholder for actual import logic
+    // For now it just closes the modal
+    this.showImportModal = false;
+  }
 
   openFilterSidebar(): void {
     this.isFilterSidebarOpen = true;

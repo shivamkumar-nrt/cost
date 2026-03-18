@@ -1,0 +1,46 @@
+<div class="modal-overlay" (click)="onClose()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Import Data</h2>
+      <button class="close-icon" (click)="onClose()">✕</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="download-section">
+        <span class="info-icon">ⓘ</span>
+        <a href="#" class="download-link">Download Template</a>
+      </div>
+
+      <div class="file-browse-container">
+        <div class="file-display">
+          {{ fileName || 'Excel file .xls or .xlsx format' }}
+        </div>
+        <label class="browse-btn">
+          Browse link
+          <input type="file" (change)="onFileSelected($event)" accept=".xls,.xlsx" style="display: none;" />
+        </label>
+      </div>
+
+      <div class="insert-type-section">
+        <span class="label">Insert Type :</span>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="insertType" [(ngModel)]="insertType" value="append" />
+            <span class="radio-custom"></span>
+            Append
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="insertType" [(ngModel)]="insertType" value="replace" />
+            <span class="radio-custom"></span>
+            Replace
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+      <button class="btn btn-upload" (click)="onUpload()" [disabled]="!selectedFile">Upload</button>
+    </div>
+  </div>
+</div>

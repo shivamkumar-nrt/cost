@@ -7,6 +7,7 @@ import { CostDatabaseComponent } from './cost-database.component';
 import { RawMaterialDatabaseComponent } from './raw-material-database.component';
 import { LocationSpecificDatabaseComponent } from './location-specific-database.component';
 import { ProjectSpecificDatabaseComponent } from './project-specific-database.component';
+import { ImportModalComponent } from './import-modal.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
@@ -14,7 +15,8 @@ import { SharedModule } from '../../shared/shared.module';
     CostDatabaseComponent,
     RawMaterialDatabaseComponent,
     LocationSpecificDatabaseComponent,
-    ProjectSpecificDatabaseComponent
+    ProjectSpecificDatabaseComponent,
+    ImportModalComponent
   ],
   imports: [CommonModule, FormsModule, RouterModule, CostDatabaseRoutingModule, SharedModule]
 })
