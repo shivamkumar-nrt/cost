@@ -3,17 +3,41 @@
     <thead>
       <tr>
         <th class="selector"></th>
-        <th>Year</th>
-        <th>Location</th>
-        <th>Project</th>
-        <th>Category</th>
-        <th>Short Item Specification</th>
-        <th>Vendor Name</th>
-        <th>MoC</th>
-        <th>UoM</th>
-        <th class="rate-col">
+        <th (click)="onSort('year')" class="sortable">
+          Year
+          <span class="sort-indicator" *ngIf="sortKey === 'year'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('location')" class="sortable">
+          Location
+          <span class="sort-indicator" *ngIf="sortKey === 'location'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('project')" class="sortable">
+          Project
+          <span class="sort-indicator" *ngIf="sortKey === 'project'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('category')" class="sortable">
+          Category
+          <span class="sort-indicator" *ngIf="sortKey === 'category'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('item')" class="sortable">
+          Short Item Specification
+          <span class="sort-indicator" *ngIf="sortKey === 'item'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('vendor')" class="sortable">
+          Vendor Name
+          <span class="sort-indicator" *ngIf="sortKey === 'vendor'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('moc')" class="sortable">
+          MoC
+          <span class="sort-indicator" *ngIf="sortKey === 'moc'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('uom')" class="sortable">
+          UoM
+          <span class="sort-indicator" *ngIf="sortKey === 'uom'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+        </th>
+        <th (click)="onSort('totalRate')" class="sortable rate-col">
           Total Rate
-
+          <span class="sort-indicator" *ngIf="sortKey === 'totalRate'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
         </th>
       </tr>
     </thead>
@@ -25,7 +49,14 @@
         <td><input type="text" [(ngModel)]="inputRow.year" /></td>
         <td><input type="text" [(ngModel)]="inputRow.location" /></td>
         <td><input type="text" [(ngModel)]="inputRow.project" /></td>
-        <td><input type="text" [(ngModel)]="inputRow.category" /></td>
+        <td>
+          <app-autocomplete
+            [(ngModel)]="inputRow.category"
+            [options]="categories"
+            placeholder="Select Category"
+            width="140px"
+          ></app-autocomplete>
+        </td>
         <td><input type="text" [(ngModel)]="inputRow.item" /></td>
         <td><input type="text" [(ngModel)]="inputRow.vendor" /></td>
         <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
@@ -57,7 +88,11 @@
         </td>
         <td>
           <ng-container *ngIf="row.selected; else projectCategoryText">
-            <input type="text" [(ngModel)]="row.category" />
+            <app-autocomplete
+              [(ngModel)]="row.category"
+              [options]="categories"
+              width="140px"
+            ></app-autocomplete>
           </ng-container>
           <ng-template #projectCategoryText>{{ row.category }}</ng-template>
         </td>

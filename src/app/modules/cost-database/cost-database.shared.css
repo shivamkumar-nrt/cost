@@ -159,3 +159,22 @@ input[type="number"] {
     max-width: 120px;
   }
 }
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  white-space: nowrap;
+}
+
+.sortable:hover {
+  background-color: #f1f5f9;
+}
+
+.sort-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 14px;
+  color: #2563eb;
+  font-weight: bold;
+}

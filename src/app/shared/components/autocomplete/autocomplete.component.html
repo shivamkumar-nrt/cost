@@ -1,0 +1,35 @@
+<div class="autocomplete-container" [style.width]="width">
+  <label *ngIf="label" class="autocomplete-label">{{ label }}</label>
+  
+  <div class="input-wrapper" #inputField>
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [(ngModel)]="searchQuery"
+      (input)="filterOptions()"
+      (focus)="onInputFocus()"
+      [disabled]="disabled"
+      [class.error]="errorMessage"
+      class="autocomplete-input"
+    />
+    <span class="chevron" (click)="toggleDropdown()">▼</span>
+    
+    <div class="dropdown-list" *ngIf="isOpen" [style.max-height]="height">
+      <div 
+        *ngFor="let option of filteredOptions" 
+        (click)="selectOption(option)"
+        class="dropdown-item"
+        [class.selected]="getOptionValue(option) === value"
+      >
+        {{ getOptionDisplay(option) }}
+      </div>
+      <div *ngIf="filteredOptions.length === 0" class="no-results">
+        No results found
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+</div>

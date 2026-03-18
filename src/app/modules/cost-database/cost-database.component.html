@@ -34,6 +34,10 @@
           <option *ngFor="let vendor of vendors" [value]="vendor">{{ vendor }}</option>
         </select>
       </div>
+      <div class="toolbar-autocomplete">
+        <app-autocomplete [(ngModel)]="selectedCategory" (ngModelChange)="updateFilters()" [options]="categoryOptions"
+          placeholder="Select Category" width="180px"></app-autocomplete>
+      </div>
     </div>
 
     <div class="toolbar-actions">
@@ -66,23 +70,23 @@
     </button>
   </nav>
 
-  <div class="tab-sub-header">
+  <!-- <div class="tab-sub-header">
     <div class="view-by">View By <strong>Layout 01</strong> <span class="chevron">▼</span></div>
-  </div>
+  </div> -->
 
   <div class="tab-body">
     <app-raw-material-database #rawTab *ngIf="activeTab === 'raw-material'" [filterYear]="appliedYear"
       [filterLocation]="appliedLocation" [filterVendor]="appliedVendor" [filterCategory]="appliedCategory"
       [filterKeyword]="appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
-      [sortToken]="sortToken"></app-raw-material-database>
+      [sortToken]="sortToken" [categories]="categoryOptions"></app-raw-material-database>
     <app-location-specific-database #locationTab *ngIf="activeTab === 'location-specific'" [filterYear]="appliedYear"
       [filterLocation]="appliedLocation" [filterVendor]="appliedVendor" [filterCategory]="appliedCategory"
       [filterKeyword]="appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
-      [sortToken]="sortToken"></app-location-specific-database>
+      [sortToken]="sortToken" [categories]="categoryOptions"></app-location-specific-database>
     <app-project-specific-database #projectTab *ngIf="activeTab === 'project-specific'" [filterYear]="appliedYear"
       [filterLocation]="appliedLocation" [filterVendor]="appliedVendor" [filterCategory]="appliedCategory"
       [filterKeyword]="appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
-      [sortToken]="sortToken"></app-project-specific-database>
+      [sortToken]="sortToken" [categories]="categoryOptions"></app-project-specific-database>
   </div>
 
   <div class="filter-overlay" *ngIf="isFilterSidebarOpen" (click)="closeFilterSidebar()"></div>
@@ -118,10 +122,8 @@
       </div>
 
       <div class="filter-field">
-        <label>Category</label>
-        <select [(ngModel)]="selectedCategory">
-          <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
-        </select>
+        <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" label="Category"
+          placeholder="Choose Category" width="100%"></app-autocomplete>
       </div>
 
       <div class="filter-field">

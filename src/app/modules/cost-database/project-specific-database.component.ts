@@ -31,6 +31,9 @@ export class ProjectSpecificDatabaseComponent {
   @Input() filterToken = 0;
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
+  @Input() categories: string[] = [];
+  sortKey: string = 'totalRate';
+
 
   inputRow: ProjectRow = this.createEmptyInputRow();
 
@@ -41,7 +44,7 @@ export class ProjectSpecificDatabaseComponent {
       year: '2024 - 2025',
       location: 'BLR',
       project: 'Project Sunrise',
-      category: 'ELE',
+      category: 'test CATE',
       item: 'Supplying & laying of 1100V XLPE insulated cable',
       vendor: 'ABC Vendor Pvt Ltd',
       moc: 'Cu cable',
@@ -54,7 +57,7 @@ export class ProjectSpecificDatabaseComponent {
       year: '2025 - 2026',
       location: 'MUM',
       project: 'Project Sunrise',
-      category: 'ELE',
+      category: 'test CATE',
       item: '2 core 2.5 sq.mm Cu cable',
       vendor: 'Project Sunrise',
       moc: 'Cu cable',
@@ -67,7 +70,7 @@ export class ProjectSpecificDatabaseComponent {
       year: '2024 - 2025',
       location: 'BLR',
       project: 'New Sunrise',
-      category: 'ELE',
+      category: 'test CATE',
       item: 'Control cable',
       vendor: 'Blue Star Limited (R 3)',
       moc: 'HT cable',
@@ -128,6 +131,16 @@ export class ProjectSpecificDatabaseComponent {
     row.selected = !row.selected;
   }
 
+  onSort(key: string): void {
+    if (this.sortKey === key) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortKey = key;
+      this.sortDirection = 'asc';
+    }
+    this.refreshRows();
+  }
+
   deleteSelectedRows(): void {
     const remaining = this.allRows.filter(row => !row.selected);
     if (remaining.length !== this.allRows.length) {
@@ -168,10 +181,20 @@ export class ProjectSpecificDatabaseComponent {
     });
 
     this.rows = filtered.sort((a, b) => {
-      const aRate = a.totalRate ?? 0;
-      const bRate = b.totalRate ?? 0;
-      return this.sortDirection === 'asc' ? aRate - bRate : bRate - aRate;
+      const aValue = (a as any)[this.sortKey];
+      const bValue = (b as any)[this.sortKey];
+
+      if (aValue === bValue) return 0;
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      const factor = this.sortDirection === 'asc' ? 1 : -1;
+      if (typeof aValue === 'string') {
+        return factor * aValue.localeCompare(bValue);
+      }
+      return factor * (aValue - bValue);
     });
+
     this.currentPage = 1;
   }
 

@@ -54,6 +54,10 @@ export class LocationSpecificDatabaseComponent {
   @Input() filterToken = 0;
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
+  @Input() categories: string[] = [];
+  sortKey: string = 'totalRate';
+
+
 
   readonly response: ApiResponse = {
     status: 'SUCCESS',
@@ -63,7 +67,7 @@ export class LocationSpecificDatabaseComponent {
         id: 3,
         categoryName: 'test',
         subCategoryName: 'Real Estate',
-        itemTypeName: 'ELE',
+        itemTypeName: 'test CATE',
         itemName: '3 core 300 sq. mm Al arm (E)',
         moc: 'HT cable',
         uom: 'RM',
@@ -78,7 +82,7 @@ export class LocationSpecificDatabaseComponent {
         id: 2,
         categoryName: 'test',
         subCategoryName: 'Real Estate',
-        itemTypeName: 'ELE',
+        itemTypeName: 'test CATE',
         itemName: '2 core 2.5 sq.mm Cu cable',
         moc: 'Cu cable',
         uom: 'RM',
@@ -148,6 +152,16 @@ export class LocationSpecificDatabaseComponent {
 
   toggleEdit(row: TableRow): void {
     row.selected = !row.selected;
+  }
+
+  onSort(key: string): void {
+    if (this.sortKey === key) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortKey = key;
+      this.sortDirection = 'asc';
+    }
+    this.refreshRows();
   }
 
   deleteSelectedRows(): void {
@@ -226,10 +240,20 @@ export class LocationSpecificDatabaseComponent {
     });
 
     this.rows = filtered.sort((a, b) => {
-      const aRate = a.totalRate ?? 0;
-      const bRate = b.totalRate ?? 0;
-      return this.sortDirection === 'asc' ? aRate - bRate : bRate - aRate;
+      const aValue = (a as any)[this.sortKey];
+      const bValue = (b as any)[this.sortKey];
+
+      if (aValue === bValue) return 0;
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      const factor = this.sortDirection === 'asc' ? 1 : -1;
+      if (typeof aValue === 'string') {
+        return factor * aValue.localeCompare(bValue);
+      }
+      return factor * (aValue - bValue);
     });
+
     this.currentPage = 1;
   }
 

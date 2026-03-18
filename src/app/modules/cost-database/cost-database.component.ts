@@ -6,6 +6,11 @@ import { RawMaterialDatabaseComponent } from './raw-material-database.component'
 type TabKey = 'raw-material' | 'location-specific' | 'project-specific';
 type SortDirection = 'asc' | 'desc';
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 @Component({
   selector: 'app-cost-database',
   standalone: false,
@@ -35,7 +40,19 @@ export class CostDatabaseComponent {
   filterToken = 0;
   sortToken = 0;
   isFilterSidebarOpen = false;
-  readonly categories = ['All', 'ELE', 'Civil', 'MEP'];
+
+  // Demo response structure - ready for API integration
+  readonly categoryApiResponse = {
+    "status": "SUCCESS",
+    "message": "OK",
+    "payload": [
+      { "id": 2, "name": "test 2 CATE" },
+      { "id": 1, "name": "test CATE" }
+    ],
+    "statusCode": 200
+  };
+
+  readonly categoryOptions = ['All', ...this.categoryApiResponse.payload.map(c => c.name)];
 
   get activeTabLabel(): string {
     if (this.activeTab === 'raw-material') {
