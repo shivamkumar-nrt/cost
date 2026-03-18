@@ -37,6 +37,7 @@ interface TableRow {
   moc: string;
   uom: string;
   totalRate: number | null;
+  isEditing: boolean;
 }
 
 @Component({
@@ -56,6 +57,9 @@ export class LocationSpecificDatabaseComponent {
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
   sortKey: string = 'totalRate';
+  showInputRow = false;
+ drum: string = ''; // Placeholder if needed, but sortKey is the main one
+
 
 
 
@@ -143,16 +147,26 @@ export class LocationSpecificDatabaseComponent {
     });
 
     this.inputRow = this.createEmptyInputRow();
+    this.showInputRow = false;
     this.refreshRows();
+  }
+
+  toggleAddRow(): void {
+    this.showInputRow = !this.showInputRow;
+    if (!this.showInputRow) {
+      this.inputRow = this.createEmptyInputRow();
+    }
+  }
+
+  cancelAdd(): void {
+    this.showInputRow = false;
+    this.inputRow = this.createEmptyInputRow();
   }
 
   applyFilterSort(): void {
     this.refreshRows();
   }
 
-  toggleEdit(row: TableRow): void {
-    row.selected = !row.selected;
-  }
 
   onSort(key: string): void {
     if (this.sortKey === key) {
@@ -167,22 +181,27 @@ export class LocationSpecificDatabaseComponent {
   deleteSelectedRows(): void {
     const remaining = this.allRows.filter(row => !row.selected);
     if (remaining.length !== this.allRows.length) {
-      // Something was deleted
-      // We need to mutate the source array if it's a field
       (this as any).allRows = remaining;
       this.refreshRows();
     }
   }
 
   editSelectedRows(): void {
-    // This is handled by toggling 'selected' on each row
-    // If the user wants to toggle ALL selected rows into edit mode:
     this.rows.forEach(row => {
       if (row.selected) {
-        // row.selected = true; // They are already selected if we are here
-        // We might need a separate 'isEditing' flag if 'selected' is just for checkbox
+        row.isEditing = true;
       }
     });
+  }
+
+  saveRow(row: TableRow): void {
+    row.isEditing = false;
+    row.selected = false;
+  }
+
+  cancelRowEdit(row: TableRow): void {
+    row.isEditing = false;
+    this.refreshRows();
   }
 
   previousPage(): void {
@@ -197,6 +216,7 @@ export class LocationSpecificDatabaseComponent {
     }
   }
 
+
   private buildRowsFromApi(): TableRow[] {
     const mapped = this.response.payload.map((entry, index) => ({
       id: entry.id,
@@ -209,8 +229,10 @@ export class LocationSpecificDatabaseComponent {
       vendorName: 'Blue Star Limited (R 3)',
       moc: entry.moc,
       uom: entry.uom,
-      totalRate: index === 0 ? 2892 : 2628
+      totalRate: index === 0 ? 2892 : 2628,
+      isEditing: false
     }));
+
 
     const clones: TableRow[] = [];
     for (let i = 0; i < 18; i += 1) {
@@ -269,7 +291,8 @@ export class LocationSpecificDatabaseComponent {
       vendorName: '',
       moc: '',
       uom: '',
-      totalRate: null
+      totalRate: null,
+      isEditing: false
     };
   }
 }

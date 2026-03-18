@@ -39,13 +39,12 @@
           Total Rate
           <span class="sort-indicator" *ngIf="sortKey === 'totalRate'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
         </th>
+        <th class="action-col">Action</th>
       </tr>
     </thead>
     <tbody>
-      <tr class="input-row">
-        <td class="selector">
-          <input type="checkbox" [checked]="inputRow.selected" disabled />
-        </td>
+      <tr class="input-row" *ngIf="showInputRow">
+        <td class="selector"></td>
         <td><input type="text" [(ngModel)]="inputRow.year" /></td>
         <td><input type="text" [(ngModel)]="inputRow.location" /></td>
         <td><input type="text" [(ngModel)]="inputRow.project" /></td>
@@ -62,32 +61,39 @@
         <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
         <td><input type="text" [(ngModel)]="inputRow.uom" /></td>
         <td><input type="number" [(ngModel)]="inputRow.totalRate" /></td>
+        <td class="action-cell">
+          <div class="row-actions">
+            <button type="button" class="icon-only-btn save-btn" title="Save" (click)="addFromInput()">✓</button>
+            <button type="button" class="icon-only-btn cancel-btn" title="Cancel" (click)="cancelAdd()">✕</button>
+          </div>
+        </td>
       </tr>
+
 
       <tr *ngFor="let row of pagedRows" [class.selected]="row.selected">
         <td class="selector">
-          <input type="checkbox" [checked]="row.selected" (change)="toggleEdit(row)" />
+          <input type="checkbox" [(ngModel)]="row.selected" />
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectYearText">
+          <ng-container *ngIf="row.isEditing; else projectYearText">
             <input type="text" [(ngModel)]="row.year" />
           </ng-container>
           <ng-template #projectYearText>{{ row.year }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectLocationText">
+          <ng-container *ngIf="row.isEditing; else projectLocationText">
             <input type="text" [(ngModel)]="row.location" />
           </ng-container>
           <ng-template #projectLocationText>{{ row.location }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectNameText">
+          <ng-container *ngIf="row.isEditing; else projectNameText">
             <input type="text" [(ngModel)]="row.project" />
           </ng-container>
           <ng-template #projectNameText>{{ row.project }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectCategoryText">
+          <ng-container *ngIf="row.isEditing; else projectCategoryText">
             <app-autocomplete
               [(ngModel)]="row.category"
               [options]="categories"
@@ -97,36 +103,43 @@
           <ng-template #projectCategoryText>{{ row.category }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectItemText">
+          <ng-container *ngIf="row.isEditing; else projectItemText">
             <input type="text" [(ngModel)]="row.item" />
           </ng-container>
           <ng-template #projectItemText>{{ row.item }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectVendorText">
+          <ng-container *ngIf="row.isEditing; else projectVendorText">
             <input type="text" [(ngModel)]="row.vendor" />
           </ng-container>
           <ng-template #projectVendorText>{{ row.vendor }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectMocText">
+          <ng-container *ngIf="row.isEditing; else projectMocText">
             <input type="text" [(ngModel)]="row.moc" />
           </ng-container>
           <ng-template #projectMocText>{{ row.moc }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectUomText">
+          <ng-container *ngIf="row.isEditing; else projectUomText">
             <input type="text" [(ngModel)]="row.uom" />
           </ng-container>
           <ng-template #projectUomText>{{ row.uom }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.selected; else projectRateText">
+          <ng-container *ngIf="row.isEditing; else projectRateText">
             <input type="number" [(ngModel)]="row.totalRate" />
           </ng-container>
           <ng-template #projectRateText>{{ row.totalRate | number: '1.2-2' }}</ng-template>
         </td>
+        <td class="action-cell">
+          <div class="row-actions" *ngIf="row.isEditing">
+            <button type="button" class="icon-only-btn save-btn" title="Save" (click)="saveRow(row)">✓</button>
+            <button type="button" class="icon-only-btn cancel-btn" title="Cancel" (click)="cancelRowEdit(row)">✕</button>
+          </div>
+        </td>
       </tr>
+
     </tbody>
   </table>
 

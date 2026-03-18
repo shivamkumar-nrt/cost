@@ -14,6 +14,7 @@ interface ProjectRow {
   moc: string;
   uom: string;
   totalRate: number | null;
+  isEditing: boolean;
 }
 
 @Component({
@@ -33,6 +34,9 @@ export class ProjectSpecificDatabaseComponent {
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
   sortKey: string = 'totalRate';
+  showInputRow = false;
+
+
 
 
   inputRow: ProjectRow = this.createEmptyInputRow();
@@ -49,7 +53,8 @@ export class ProjectSpecificDatabaseComponent {
       vendor: 'ABC Vendor Pvt Ltd',
       moc: 'Cu cable',
       uom: 'RM',
-      totalRate: 2628
+      totalRate: 2628,
+      isEditing: false
     },
     {
       id: 2,
@@ -62,7 +67,8 @@ export class ProjectSpecificDatabaseComponent {
       vendor: 'Project Sunrise',
       moc: 'Cu cable',
       uom: 'RM',
-      totalRate: 167
+      totalRate: 167,
+      isEditing: false
     },
     {
       id: 3,
@@ -75,7 +81,8 @@ export class ProjectSpecificDatabaseComponent {
       vendor: 'Blue Star Limited (R 3)',
       moc: 'HT cable',
       uom: 'RM',
-      totalRate: 2892
+      totalRate: 2892,
+      isEditing: false
     }
   ];
 
@@ -120,8 +127,22 @@ export class ProjectSpecificDatabaseComponent {
       selected: true
     });
     this.inputRow = this.createEmptyInputRow();
+    this.showInputRow = false;
     this.refreshRows();
   }
+
+  toggleAddRow(): void {
+    this.showInputRow = !this.showInputRow;
+    if (!this.showInputRow) {
+      this.inputRow = this.createEmptyInputRow();
+    }
+  }
+
+  cancelAdd(): void {
+    this.showInputRow = false;
+    this.inputRow = this.createEmptyInputRow();
+  }
+
 
   applyFilterSort(): void {
     this.refreshRows();
@@ -150,7 +171,21 @@ export class ProjectSpecificDatabaseComponent {
   }
 
   editSelectedRows(): void {
-    // Toggling 'selected' already handles edit mode in the template
+    this.rows.forEach(row => {
+      if (row.selected) {
+        row.isEditing = true;
+      }
+    });
+  }
+
+  saveRow(row: ProjectRow): void {
+    row.isEditing = false;
+    row.selected = false;
+  }
+
+  cancelRowEdit(row: ProjectRow): void {
+    row.isEditing = false;
+    this.refreshRows();
   }
 
   previousPage(): void {
@@ -164,6 +199,7 @@ export class ProjectSpecificDatabaseComponent {
       this.currentPage += 1;
     }
   }
+
 
   private refreshRows(): void {
     const filtered = this.allRows.filter((row) => {
@@ -210,7 +246,8 @@ export class ProjectSpecificDatabaseComponent {
       vendor: '',
       moc: '',
       uom: '',
-      totalRate: null
+      totalRate: null,
+      isEditing: false
     };
   }
 }

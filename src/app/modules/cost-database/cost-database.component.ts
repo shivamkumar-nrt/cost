@@ -95,15 +95,16 @@ export class CostDatabaseComponent {
 
   addRowToActiveTab(): void {
     if (this.activeTab === 'raw-material') {
-      this.rawTab?.addFromInput();
+      this.rawTab?.toggleAddRow();
       return;
     }
     if (this.activeTab === 'project-specific') {
-      this.projectTab?.addFromInput();
+      this.projectTab?.toggleAddRow();
       return;
     }
-    this.locationTab?.addFromInput();
+    this.locationTab?.toggleAddRow();
   }
+
 
   openFilterSidebar(): void {
     this.isFilterSidebarOpen = true;

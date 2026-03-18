@@ -14,6 +14,7 @@ interface RawMaterialRow {
   moc: string;
   uom: string;
   rate: number | null;
+  isEditing: boolean;
 }
 
 @Component({
@@ -33,6 +34,8 @@ export class RawMaterialDatabaseComponent {
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
   sortKey: string = 'rate';
+  showInputRow = false;
+
 
 
   inputRow: RawMaterialRow = this.createEmptyInputRow();
@@ -49,7 +52,8 @@ export class RawMaterialDatabaseComponent {
       vendor: 'Blue Star Limited (R 3)',
       moc: 'HT cable',
       uom: 'RM',
-      rate: 2892
+      rate: 2892,
+      isEditing: false
     },
     {
       id: 2,
@@ -62,7 +66,8 @@ export class RawMaterialDatabaseComponent {
       vendor: 'ABC Vendor Pvt Ltd',
       moc: 'Cu cable',
       uom: 'RM',
-      rate: 167
+      rate: 167,
+      isEditing: false
     },
     {
       id: 3,
@@ -75,7 +80,8 @@ export class RawMaterialDatabaseComponent {
       vendor: 'Project Sunrise',
       moc: 'Cu cable',
       uom: 'RM',
-      rate: 2628
+      rate: 2628,
+      isEditing: false
     }
   ];
 
@@ -120,8 +126,22 @@ export class RawMaterialDatabaseComponent {
       selected: true
     });
     this.inputRow = this.createEmptyInputRow();
+    this.showInputRow = false;
     this.refreshRows();
   }
+
+  toggleAddRow(): void {
+    this.showInputRow = !this.showInputRow;
+    if (!this.showInputRow) {
+      this.inputRow = this.createEmptyInputRow();
+    }
+  }
+
+  cancelAdd(): void {
+    this.showInputRow = false;
+    this.inputRow = this.createEmptyInputRow();
+  }
+
 
   applyFilterSort(): void {
     this.refreshRows();
@@ -150,7 +170,22 @@ export class RawMaterialDatabaseComponent {
   }
 
   editSelectedRows(): void {
-    // Toggling 'selected' already handles edit mode in the template
+    this.rows.forEach(row => {
+      if (row.selected) {
+        row.isEditing = true;
+      }
+    });
+  }
+
+  saveRow(row: RawMaterialRow): void {
+    row.isEditing = false;
+    row.selected = false;
+  }
+
+  cancelRowEdit(row: RawMaterialRow): void {
+    row.isEditing = false;
+    // Optional: Refresh from allRows to revert unsaved changes
+    this.refreshRows();
   }
 
   previousPage(): void {
@@ -210,7 +245,8 @@ export class RawMaterialDatabaseComponent {
       vendor: '',
       moc: '',
       uom: '',
-      rate: null
+      rate: null,
+      isEditing: false
     };
   }
 }

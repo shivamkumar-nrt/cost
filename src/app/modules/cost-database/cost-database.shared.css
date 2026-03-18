@@ -160,7 +160,43 @@ input[type="number"] {
   }
 }
 
+.row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-col {
+  width: 100px;
+  text-align: center;
+}
+
+.action-cell {
+  background: #fcfdfe;
+}
+
+
+.save-btn {
+  color: #16a34a;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.save-btn:hover {
+  background: #f0fdf4 !important;
+}
+
+.cancel-btn {
+  color: #dc2626;
+  font-size: 16px;
+}
+
+.cancel-btn:hover {
+  background: #fef2f2 !important;
+}
+
 .sortable {
+
   cursor: pointer;
   user-select: none;
   position: relative;
