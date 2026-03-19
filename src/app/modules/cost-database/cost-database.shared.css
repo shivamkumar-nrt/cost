@@ -49,13 +49,34 @@ tbody tr.selected td {
 /* ─── SPECIAL COLUMNS ─────────────────────────────────────────────────── */
 .selector {
   width: 48px;
+  min-width: 48px;
   text-align: center;
+  vertical-align: middle;
+}
+
+th.selector,
+td.selector {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0 !important;
+  line-height: 1;
+}
+
+th.selector input[type="checkbox"],
+td.selector input[type="checkbox"] {
+  display: block;
+  margin: 0 auto;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
+  vertical-align: middle;
 }
 
 .rate-col {

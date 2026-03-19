@@ -128,6 +128,19 @@ export class LocationSpecificDatabaseComponent {
     return Math.min(this.currentPage * this.pageSize, this.rows.length);
   }
 
+  get allSelected(): boolean {
+    return this.pagedRows.length > 0 && this.pagedRows.every(r => r.selected);
+  }
+
+  get someSelected(): boolean {
+    return this.pagedRows.some(r => r.selected) && !this.allSelected;
+  }
+
+  toggleSelectAll(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.pagedRows.forEach(r => (r.selected = checked));
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['filterToken'] || changes['sortToken']) {
       this.refreshRows();
@@ -192,6 +205,15 @@ export class LocationSpecificDatabaseComponent {
         row.isEditing = true;
       }
     });
+  }
+
+  saveActive(): void {
+    if (this.showInputRow) {
+      this.addFromInput();
+    } else {
+      const editing = this.rows.filter(r => r.isEditing);
+      editing.forEach(r => this.saveRow(r));
+    }
   }
 
   saveRow(row: TableRow): void {

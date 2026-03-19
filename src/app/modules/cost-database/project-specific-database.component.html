@@ -2,7 +2,9 @@
   <table>
     <thead>
       <tr>
-        <th class="selector"></th>
+        <th class="selector">
+          <input type="checkbox" [checked]="allSelected" [indeterminate]="someSelected" (change)="toggleSelectAll($event)" title="Select All" />
+        </th>
         <th (click)="onSort('year')" class="sortable">
           Year
           <span class="sort-indicator" *ngIf="sortKey === 'year'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
@@ -39,7 +41,6 @@
           Total Rate
           <span class="sort-indicator" *ngIf="sortKey === 'totalRate'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
         </th>
-        <th class="action-col">Action</th>
       </tr>
     </thead>
     <tbody>
@@ -61,12 +62,6 @@
         <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
         <td><input type="text" [(ngModel)]="inputRow.uom" /></td>
         <td><input type="number" [(ngModel)]="inputRow.totalRate" /></td>
-        <td class="action-cell">
-          <div class="row-actions">
-            <button type="button" class="icon-only-btn save-btn" title="Save" (click)="addFromInput()">✓</button>
-            <button type="button" class="icon-only-btn cancel-btn" title="Cancel" (click)="cancelAdd()">✕</button>
-          </div>
-        </td>
       </tr>
 
 
@@ -131,12 +126,6 @@
             <input type="number" [(ngModel)]="row.totalRate" />
           </ng-container>
           <ng-template #projectRateText>{{ row.totalRate | number: '1.2-2' }}</ng-template>
-        </td>
-        <td class="action-cell">
-          <div class="row-actions" *ngIf="row.isEditing">
-            <button type="button" class="icon-only-btn save-btn" title="Save" (click)="saveRow(row)">✓</button>
-            <button type="button" class="icon-only-btn cancel-btn" title="Cancel" (click)="cancelRowEdit(row)">✕</button>
-          </div>
         </td>
       </tr>
 

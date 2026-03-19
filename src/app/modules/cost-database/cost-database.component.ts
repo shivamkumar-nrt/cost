@@ -189,4 +189,16 @@ export class CostDatabaseComponent {
     }
     this.locationTab?.editSelectedRows?.();
   }
+
+  saveActiveTab(): void {
+    if (this.activeTab === 'raw-material') {
+      this.rawTab?.saveActive();
+      return;
+    }
+    if (this.activeTab === 'project-specific') {
+      this.projectTab?.saveActive();
+      return;
+    }
+    this.locationTab?.saveActive();
+  }
 }
