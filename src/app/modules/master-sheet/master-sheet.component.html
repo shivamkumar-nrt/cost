@@ -1,0 +1,208 @@
+<section class="master-sheet-page">
+  <header class="page-top-header">
+    <div class="header-left">
+      <h2>Master Sheet</h2>
+    </div>
+    <div class="header-right">
+      <button class="analytics-btn" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Analytics View
+      </button>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="toolbar-row">
+      <button class="add-btn" type="button"><span class="icon">+</span> Add New</button>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-checkbox">
+              <span class="collapse-all-icon">
+                <svg width="10" height="2" viewBox="0 0 10 2" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0 1H10" stroke="#3B82F6" stroke-width="2"/>
+                </svg>
+              </span>
+            </th>
+            <th class="col-srno">Sr No. 
+              <svg class="sort-icon" width="6" height="4" viewBox="0 0 6 4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 4L0 0H6L3 4Z" fill="#3B82F6"/>
+              </svg>
+            </th>
+            <th class="col-subcat">Subcategory</th>
+            <th class="col-type">Type</th>
+            <th class="col-item">Item Name</th>
+            <th class="col-moc">MoC</th>
+            <th class="col-uom">UoM
+              <svg class="sort-icon" width="6" height="4" viewBox="0 0 6 4" fill="none" xmlns="http://www.w3.org/2000/svg" style="fill: #D1D5DB; margin-left: auto;">
+                <path d="M3 4L0 0H6L3 4Z" />
+              </svg>
+            </th>
+          </tr>
+        </thead>
+        <tbody *ngIf="!isLoading">
+          <ng-container *ngFor="let row of visibleRows; let i = index">
+            <!-- Category Header Row -->
+            <tr *ngIf="row.isCategory" class="category-row bg-blue-light" (click)="toggleCategory(row.categoryId)">
+              <td class="col-checkbox">
+                <input type="checkbox" class="row-checkbox" (click)="$event.stopPropagation()">
+              </td>
+              <td class="col-srno"></td>
+              <td colspan="5" class="category-cell">
+                <div class="category-content">
+                  <span class="color-indicator color-{{ row.categoryId }}"></span>
+                  <span class="category-name">{{ row.categoryName }}</span>
+                </div>
+                <div class="chevron-wrapper">
+                  <svg *ngIf="row.isExpanded" width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 1L6 6L11 1" stroke="#344054" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg *ngIf="!row.isExpanded" width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(180deg);">
+                    <path d="M1 1L6 6L11 1" stroke="#344054" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Item Data Row -->
+            <tr *ngIf="!row.isCategory" class="item-row" (click)="openSidebar(row)">
+              <td class="col-checkbox">
+                <input type="checkbox" class="row-checkbox" (click)="$event.stopPropagation()">
+              </td>
+              <td class="col-srno">{{ row.srNo }}</td>
+              <td class="col-subcat">{{ row.subCategoryName }}</td>
+              <td class="col-type" [ngClass]="{'text-blue': row.categoryId === 2 || row.categoryId === 3}">{{ row.typeName }}</td>
+              <td class="col-item">{{ row.itemName }}</td>
+              <td class="col-moc">{{ row.moc }}</td>
+              <td class="col-uom">{{ row.uom }}</td>
+            </tr>
+          </ng-container>
+          
+          <tr *ngIf="visibleRows.length === 0" class="empty-state">
+            <td colspan="7">No items found in catalog hierarchy.</td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="isLoading">
+          <tr>
+            <td colspan="7" class="loading-state">Loading hierarchy data...</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div class="pagination">
+        <div class="page-info">1 - {{ tableRows.length }} of 40 items</div>
+        <div class="page-actions">
+          <button class="page-btn">Previous</button>
+          <button class="page-btn">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" *ngIf="selectedItem" (click)="closeSidebar()"></div>
+
+  <!-- Item Mapping Sidebar -->
+  <aside class="mapping-sidebar" [class.open]="!!selectedItem">
+    <div class="sidebar-header">
+      <h3>Item Mapping</h3>
+      <button class="close-btn" (click)="closeSidebar()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1L13 13M1 13L13 1" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="sidebar-body" *ngIf="selectedItem">
+      <!-- Upper Section -->
+      <div class="section-title">Current Mapping</div>
+      <div class="mapping-chain">
+        <div class="mapping-node">
+          <span class="tag tag-cat">CAT</span>
+          <span class="node-text">{{ selectedItem.categoryName }}</span>
+        </div>
+        <div class="arrow-down">↓</div>
+        
+        <div class="mapping-node">
+          <span class="tag tag-sub">SUB</span>
+          <span class="node-text">{{ selectedItem.subCategoryName }}</span>
+        </div>
+        <div class="arrow-down">↓</div>
+
+        <div class="mapping-node">
+          <span class="tag tag-type">TYPE</span>
+          <span class="node-text">{{ selectedItem.typeName }}</span>
+        </div>
+        <div class="arrow-down">↓</div>
+
+        <div class="mapping-node">
+          <span class="tag tag-item">ITEM</span>
+          <span class="node-text">{{ selectedItem.itemName }}</span>
+        </div>
+      </div>
+
+      <!-- Lower Section -->
+      <div class="section-title mt-24">Create New Mapping</div>
+      
+      <div class="form-group">
+        <label>Category</label>
+        <app-autocomplete 
+          [(ngModel)]="newMapping.categoryId" 
+          (ngModelChange)="onCategoryChange($event)"
+          [options]="categoryOptions" 
+          displayKey="name" 
+          valueKey="id" 
+          placeholder="Select Category"
+          width="100%">
+        </app-autocomplete>
+      </div>
+      
+      <div class="form-group">
+        <label>Sub-Category</label>
+        <app-autocomplete 
+          [(ngModel)]="newMapping.subCategoryId" 
+          (ngModelChange)="onSubCategoryChange($event)"
+          [options]="subCategoryOptions" 
+          displayKey="name" 
+          valueKey="id" 
+          placeholder="Select Sub-Category"
+          width="100%">
+        </app-autocomplete>
+      </div>
+      
+      <div class="form-group">
+        <label>Type</label>
+        <app-autocomplete 
+          [(ngModel)]="newMapping.typeId" 
+          (ngModelChange)="onTypeChange($event)"
+          [options]="typeOptions" 
+          displayKey="name" 
+          valueKey="id" 
+          placeholder="Select Type"
+          width="100%">
+        </app-autocomplete>
+      </div>
+      
+      <div class="form-group">
+        <label>Item Name</label>
+        <app-autocomplete 
+          [(ngModel)]="newMapping.itemId" 
+          [options]="itemOptions" 
+          displayKey="name" 
+          valueKey="id" 
+          placeholder="Select Item"
+          width="100%">
+        </app-autocomplete>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="save-btn" type="button" (click)="closeSidebar()">Save Mapping</button>
+    </div>
+  </aside>
+</section>
+
+

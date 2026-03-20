@@ -9,5 +9,12 @@ export const routes: Routes = [
         (m) => m.CostDatabaseModule
       )
   },
+  {
+    path: 'master-sheet',
+    loadChildren: () =>
+      import('./modules/master-sheet/master-sheet.module').then(
+        (m) => m.MasterSheetModule
+      )
+  },
   { path: '**', redirectTo: 'cost-database' }
 ];
