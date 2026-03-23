@@ -207,4 +207,44 @@ export class CatalogService {
       statusCode: 200
     }).pipe(delay(200));
   }
+  createCategory(payload: any): Observable<any> {
+    // return this.http.post<any>(`${this.baseUrl}/categories`, payload);
+    return of({
+      status: "SUCCESS",
+      message: "Created",
+      payload: { id: Date.now(), ...payload },
+      statusCode: 200
+    }).pipe(delay(500));
+  }
+
+  createSubCategory(payload: any): Observable<any> {
+    // return this.http.post<any>(`${this.baseUrl}/sub-categories`, payload);
+    return of({
+      status: "SUCCESS",
+      message: "Created",
+      payload: { id: Date.now(), ...payload },
+      statusCode: 200
+    }).pipe(delay(500));
+  }
+
+  createType(payload: any): Observable<any> {
+    // return this.http.post<any>(`${this.baseUrl}/types`, payload);
+    return of({
+      status: "SUCCESS",
+      message: "Created",
+      payload: { id: Date.now(), ...payload },
+      statusCode: 200
+    }).pipe(delay(500));
+  }
+
+  createItem(payload: any): Observable<any> {
+    // return this.http.post<any>(`${this.baseUrl}/items`, payload);
+    // Mocking the success since failure example was given for duplicate
+    return of({
+      status: "SUCCESS",
+      message: "Created",
+      payload: { id: Date.now(), ...payload },
+      statusCode: 200
+    }).pipe(delay(500));
+  }
 }

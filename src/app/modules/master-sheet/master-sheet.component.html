@@ -16,8 +16,19 @@
   </header>
 
   <div class="main-content">
-    <div class="toolbar-row">
-      <button class="add-btn" type="button"><span class="icon">+</span> Add New</button>
+    <div class="toolbar-row d-flex align-items-center">
+      <!-- Create New Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="createDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          Create New
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="createDropdown">
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="openCreateModal('category')">Create Category</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="openCreateModal('subcategory')">Create Subcategory</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="openCreateModal('type')">Create Type</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="openCreateModal('item')">Create Item Name</a></li>
+        </ul>
+      </div>
     </div>
 
     <div class="table-container">
@@ -190,4 +201,93 @@
       <button class="save-btn" type="button" (click)="closeSidebar()">Save Mapping</button>
     </div>
   </aside>
+
+  <!-- Bootstrap Modals for Creation -->
+  <div class="modal fade show" tabindex="-1" *ngIf="showCreateModalType"
+    style="display: block; background: rgba(0,0,0,0.5); z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create {{ showCreateModalType | titlecase }}</h5>
+          <button type="button" class="btn-close" (click)="closeCreateModal()"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Create Category Form -->
+          <div *ngIf="showCreateModalType === 'category'">
+            <div class="mb-3">
+              <label class="form-label">Category Name</label>
+              <input type="text" class="form-control" [(ngModel)]="createPayload.category.name"
+                placeholder="Enter Category Name">
+            </div>
+          </div>
+
+          <!-- Create Subcategory Form -->
+          <div *ngIf="showCreateModalType === 'subcategory'">
+            <div class="mb-3">
+              <label class="form-label">Category</label>
+              <app-autocomplete [(ngModel)]="createPayload.subcategory.categoryId" [options]="categoryOptions"
+                displayKey="name" valueKey="id" placeholder="Select Category" width="100%"></app-autocomplete>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Subcategory Name</label>
+              <input type="text" class="form-control" [(ngModel)]="createPayload.subcategory.name"
+                placeholder="Enter Subcategory Name">
+            </div>
+          </div>
+
+          <!-- Create Type Form -->
+          <div *ngIf="showCreateModalType === 'type'">
+            <div class="mb-3">
+              <label class="form-label">Category</label>
+              <app-autocomplete [(ngModel)]="createPayload.subcategory.categoryId"
+                (ngModelChange)="onModalCategoryChange()" [options]="categoryOptions" displayKey="name" valueKey="id"
+                placeholder="Select Category" width="100%"></app-autocomplete>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Subcategory</label>
+              <app-autocomplete [(ngModel)]="createPayload.type.subCategoryId" [options]="subCategoryOptions"
+                displayKey="name" valueKey="id" placeholder="Select Subcategory" width="100%"></app-autocomplete>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Type Name</label>
+              <input type="text" class="form-control" [(ngModel)]="createPayload.type.name"
+                placeholder="Enter Type Name">
+            </div>
+          </div>
+
+          <!-- Create Item Form -->
+          <div *ngIf="showCreateModalType === 'item'">
+            <div class="mb-3">
+              <label class="form-label">Category</label>
+              <app-autocomplete [(ngModel)]="createPayload.subcategory.categoryId"
+                (ngModelChange)="onModalCategoryChange()" [options]="categoryOptions" displayKey="name" valueKey="id"
+                placeholder="Select Category" width="100%"></app-autocomplete>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Subcategory</label>
+              <app-autocomplete [(ngModel)]="createPayload.type.subCategoryId"
+                (ngModelChange)="onModalSubCategoryChange()" [options]="subCategoryOptions" displayKey="name"
+                valueKey="id" placeholder="Select Subcategory" width="100%"></app-autocomplete>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Type</label>
+              <app-autocomplete [(ngModel)]="createPayload.item.itemTypeId" [options]="typeOptions" displayKey="name"
+                valueKey="id" placeholder="Select Type" width="100%"></app-autocomplete>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Item Name</label>
+              <input type="text" class="form-control" [(ngModel)]="createPayload.item.name"
+                placeholder="Enter Item Name">
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Close</button>
+          <button type="button" class="btn btn-primary" (click)="onCreateSubmit()">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
