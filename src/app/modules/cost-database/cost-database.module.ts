@@ -1,23 +1,8 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
 import { CostDatabaseRoutingModule } from './cost-database-routing.module';
-import { CostDatabaseComponent } from './cost-database.component';
-import { RawMaterialDatabaseComponent } from './raw-material-database.component';
-import { LocationSpecificDatabaseComponent } from './location-specific-database.component';
-import { ProjectSpecificDatabaseComponent } from './project-specific-database.component';
-import { ImportModalComponent } from './import-modal.component';
-import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
-  declarations: [
-    CostDatabaseComponent,
-    RawMaterialDatabaseComponent,
-    LocationSpecificDatabaseComponent,
-    ProjectSpecificDatabaseComponent,
-    ImportModalComponent
-  ],
-  imports: [CommonModule, FormsModule, RouterModule, CostDatabaseRoutingModule, SharedModule]
+  declarations: [],
+  imports: [CostDatabaseRoutingModule]
 })
 export class CostDatabaseModule {}

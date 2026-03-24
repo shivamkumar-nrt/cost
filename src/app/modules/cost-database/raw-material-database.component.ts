@@ -1,4 +1,12 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
+import {
+  RawMaterialResponse,
+  RawMaterialRowDto,
+  RawMaterialService
+} from '../../core/services/raw-material.service';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -19,11 +27,12 @@ interface RawMaterialRow {
 
 @Component({
   selector: 'app-raw-material-database',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, AutocompleteComponent],
   templateUrl: './raw-material-database.component.html',
   styleUrl: './raw-material-database.component.css'
 })
-export class RawMaterialDatabaseComponent {
+export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
   @Input() filterYear = '';
   @Input() filterLocation = '';
   @Input() filterVendor = '';
@@ -33,61 +42,20 @@ export class RawMaterialDatabaseComponent {
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
-  sortKey: string = 'rate';
+  sortKey = 'rate';
   showInputRow = false;
 
-
-
   inputRow: RawMaterialRow = this.createEmptyInputRow();
-
-  private readonly allRows: RawMaterialRow[] = [
-    {
-      id: 1,
-      selected: false,
-      year: '2024 - 2025',
-      location: 'BLR',
-      sector: 'Real Estate',
-      category: 'test CATE',
-      item: '3 core 300 sq. mm Al arm (E)',
-      vendor: 'Blue Star Limited (R 3)',
-      moc: 'HT cable',
-      uom: 'RM',
-      rate: 2892,
-      isEditing: false
-    },
-    {
-      id: 2,
-      selected: false,
-      year: '2024 - 2025',
-      location: 'MUM',
-      sector: 'Real Estate',
-      category: 'test CATE',
-      item: '2 core 2.5 sq.mm Cu cable',
-      vendor: 'ABC Vendor Pvt Ltd',
-      moc: 'Cu cable',
-      uom: 'RM',
-      rate: 167,
-      isEditing: false
-    },
-    {
-      id: 3,
-      selected: false,
-      year: '2025 - 2026',
-      location: 'DEL',
-      sector: 'Real Estate',
-      category: 'test CATE',
-      item: 'Cu conductor unarmored cable',
-      vendor: 'Project Sunrise',
-      moc: 'Cu cable',
-      uom: 'RM',
-      rate: 2628,
-      isEditing: false
-    }
-  ];
-
-  rows: RawMaterialRow[] = [...this.allRows];
+  private allRows: RawMaterialRow[] = [];
+  rows: RawMaterialRow[] = [];
   readonly pageSize = 10;
   currentPage = 1;
+
+  constructor(private rawMaterialService: RawMaterialService) {}
+
+  ngOnInit(): void {
+    this.loadRawMaterials();
+  }
 
   get pagedRows(): RawMaterialRow[] {
     const start = (this.currentPage - 1) * this.pageSize;
@@ -155,7 +123,6 @@ export class RawMaterialDatabaseComponent {
     this.inputRow = this.createEmptyInputRow();
   }
 
-
   applyFilterSort(): void {
     this.refreshRows();
   }
@@ -177,7 +144,7 @@ export class RawMaterialDatabaseComponent {
   deleteSelectedRows(): void {
     const remaining = this.allRows.filter(row => !row.selected);
     if (remaining.length !== this.allRows.length) {
-      (this as any).allRows = remaining;
+      this.allRows = remaining;
       this.refreshRows();
     }
   }
@@ -206,7 +173,6 @@ export class RawMaterialDatabaseComponent {
 
   cancelRowEdit(row: RawMaterialRow): void {
     row.isEditing = false;
-    // Optional: Refresh from allRows to revert unsaved changes
     this.refreshRows();
   }
 
@@ -220,6 +186,24 @@ export class RawMaterialDatabaseComponent {
     if (this.currentPage < this.totalPages) {
       this.currentPage += 1;
     }
+  }
+
+  private loadRawMaterials(): void {
+    this.rawMaterialService.getRawMaterials().subscribe({
+      next: (res: RawMaterialResponse) => {
+        this.allRows = (res?.payload || []).map((row: RawMaterialRowDto) => ({
+          ...row,
+          selected: false,
+          isEditing: false
+        }));
+        this.refreshRows();
+      },
+      error: (err) => {
+        console.error('Failed to load raw material data', err);
+        this.allRows = [];
+        this.rows = [];
+      }
+    });
   }
 
   private refreshRows(): void {

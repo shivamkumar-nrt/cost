@@ -1,4 +1,14 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { forkJoin, Observable } from 'rxjs';
+import {
+  CostDatabaseResponse,
+  CostLocationRecord,
+  CostLocationService
+} from '../../core/services/cost-location.service';
+import { ProjectDbPayload, ProjectDbService } from '../../core/services/project-db.service';
+import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -9,21 +19,26 @@ interface ProjectRow {
   location: string;
   project: string;
   category: string;
+  subPackage: string;
+  type: string;
+  sector: string;
   item: string;
   vendor: string;
   moc: string;
   uom: string;
   totalRate: number | null;
+  slNo: number | null;
   isEditing: boolean;
 }
 
 @Component({
   selector: 'app-project-specific-database',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, AutocompleteComponent],
   templateUrl: './project-specific-database.component.html',
   styleUrl: './project-specific-database.component.css'
 })
-export class ProjectSpecificDatabaseComponent {
+export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   @Input() filterYear = '';
   @Input() filterLocation = '';
   @Input() filterVendor = '';
@@ -33,62 +48,31 @@ export class ProjectSpecificDatabaseComponent {
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
-  sortKey: string = 'totalRate';
+
+  sortKey = 'totalRate';
   showInputRow = false;
-
-
-
-
   inputRow: ProjectRow = this.createEmptyInputRow();
 
-  private readonly allRows: ProjectRow[] = [
-    {
-      id: 1,
-      selected: false,
-      year: '2024 - 2025',
-      location: 'BLR',
-      project: 'Project Sunrise',
-      category: 'test CATE',
-      item: 'Supplying & laying of 1100V XLPE insulated cable',
-      vendor: 'ABC Vendor Pvt Ltd',
-      moc: 'Cu cable',
-      uom: 'RM',
-      totalRate: 2628,
-      isEditing: false
-    },
-    {
-      id: 2,
-      selected: false,
-      year: '2025 - 2026',
-      location: 'MUM',
-      project: 'Project Sunrise',
-      category: 'test CATE',
-      item: '2 core 2.5 sq.mm Cu cable',
-      vendor: 'Project Sunrise',
-      moc: 'Cu cable',
-      uom: 'RM',
-      totalRate: 167,
-      isEditing: false
-    },
-    {
-      id: 3,
-      selected: false,
-      year: '2024 - 2025',
-      location: 'BLR',
-      project: 'New Sunrise',
-      category: 'test CATE',
-      item: 'Control cable',
-      vendor: 'Blue Star Limited (R 3)',
-      moc: 'HT cable',
-      uom: 'RM',
-      totalRate: 2892,
-      isEditing: false
-    }
-  ];
-
-  rows: ProjectRow[] = [...this.allRows];
+  private allRows: ProjectRow[] = [];
+  private originalsById = new Map<number, ProjectRow>();
+  rows: ProjectRow[] = [];
   readonly pageSize = 10;
   currentPage = 1;
+
+  constructor(
+    private costLocationService: CostLocationService,
+    private projectDbService: ProjectDbService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadRows();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['filterToken'] || changes['sortToken']) {
+      this.refreshRows();
+    }
+  }
 
   get pagedRows(): ProjectRow[] {
     const start = (this.currentPage - 1) * this.pageSize;
@@ -123,24 +107,7 @@ export class ProjectSpecificDatabaseComponent {
     this.pagedRows.forEach(r => (r.selected = checked));
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['filterToken'] || changes['sortToken']) {
-      this.refreshRows();
-    }
-  }
-
-  addFromInput(): void {
-    if (!this.inputRow.item.trim()) {
-      return;
-    }
-
-    this.allRows.unshift({
-      ...this.inputRow,
-      id: Date.now(),
-      selected: true
-    });
-    this.inputRow = this.createEmptyInputRow();
-    this.showInputRow = false;
+  applyFilterSort(): void {
     this.refreshRows();
   }
 
@@ -156,13 +123,23 @@ export class ProjectSpecificDatabaseComponent {
     this.inputRow = this.createEmptyInputRow();
   }
 
+  addFromInput(): void {
+    if (!this.inputRow.item.trim()) {
+      return;
+    }
 
-  applyFilterSort(): void {
-    this.refreshRows();
-  }
-
-  toggleEdit(row: ProjectRow): void {
-    row.selected = !row.selected;
+    this.projectDbService.createProjectRecord(this.toProjectPayload(this.inputRow)).subscribe({
+      next: (res) => {
+        alert(res?.message || 'Created');
+        this.showInputRow = false;
+        this.inputRow = this.createEmptyInputRow();
+        this.loadRows();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to create project record.');
+      }
+    });
   }
 
   onSort(key: string): void {
@@ -176,16 +153,30 @@ export class ProjectSpecificDatabaseComponent {
   }
 
   deleteSelectedRows(): void {
-    const remaining = this.allRows.filter(row => !row.selected);
-    if (remaining.length !== this.allRows.length) {
-      (this as any).allRows = remaining;
-      this.refreshRows();
+    const selectedIds = this.allRows.filter(r => r.selected).map(r => r.id);
+    if (!selectedIds.length) {
+      return;
     }
+
+    const deletes = selectedIds.map(id => this.projectDbService.deleteProjectRecord(id));
+    forkJoin(deletes).subscribe({
+      next: () => {
+        alert('Deleted successfully.');
+        this.loadRows();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to delete selected rows.');
+      }
+    });
   }
 
   editSelectedRows(): void {
     this.rows.forEach(row => {
       if (row.selected) {
+        if (!this.originalsById.has(row.id)) {
+          this.originalsById.set(row.id, { ...row });
+        }
         row.isEditing = true;
       }
     });
@@ -194,20 +185,74 @@ export class ProjectSpecificDatabaseComponent {
   saveActive(): void {
     if (this.showInputRow) {
       this.addFromInput();
-    } else {
-      const editing = this.rows.filter(r => r.isEditing);
-      editing.forEach(r => this.saveRow(r));
+      return;
     }
+
+    const editingRows = this.rows.filter(r => r.isEditing);
+    if (!editingRows.length) {
+      return;
+    }
+
+    const updates: Observable<any>[] = editingRows.map(row =>
+      this.projectDbService.updateProjectRecord(row.id, this.toProjectPayload(row))
+    );
+
+    forkJoin(updates).subscribe({
+      next: () => {
+        alert('Updated successfully.');
+        this.loadRows();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to update project records.');
+      }
+    });
   }
 
   saveRow(row: ProjectRow): void {
+    this.projectDbService.updateProjectRecord(row.id, this.toProjectPayload(row)).subscribe({
+      next: () => {
+        row.isEditing = false;
+        row.selected = false;
+        this.originalsById.delete(row.id);
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to update project record.');
+      }
+    });
+  }
+
+  cancelRowEdit(row: ProjectRow): void {
+    const original = this.originalsById.get(row.id);
+    if (original) {
+      Object.assign(row, { ...original, isEditing: false, selected: false });
+      this.originalsById.delete(row.id);
+      return;
+    }
     row.isEditing = false;
     row.selected = false;
   }
 
-  cancelRowEdit(row: ProjectRow): void {
-    row.isEditing = false;
-    this.refreshRows();
+  exportData(): void {
+    this.costLocationService.exportLocations().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `project-db-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Export failed.');
+      }
+    });
+  }
+
+  reloadData(): void {
+    this.loadRows();
   }
 
   previousPage(): void {
@@ -222,6 +267,80 @@ export class ProjectSpecificDatabaseComponent {
     }
   }
 
+  private loadRows(): void {
+    this.costLocationService.getLocations().subscribe({
+      next: (res) => {
+        this.allRows = (res?.content || []).map((record) => this.mapToProjectRow(record));
+        this.originalsById.clear();
+        this.refreshRows();
+      },
+      error: (err) => {
+        console.warn('Project DB list API failed. Loading demo data.', err);
+        const fallback: CostDatabaseResponse<CostLocationRecord> =
+          this.costLocationService.getLocationDemoResponse();
+        this.allRows = fallback.payload.map((record) => this.mapToProjectRow(record));
+        this.originalsById.clear();
+        this.refreshRows();
+      }
+    });
+  }
+
+  private mapToProjectRow(record: CostLocationRecord): ProjectRow {
+    return {
+      id: record.id,
+      selected: false,
+      year: this.normalizeYearForDisplay(record.year),
+      location: record.projectLocation || '',
+      project: record.projectLocation || '',
+      category: record.category || '',
+      subPackage: record.subCategory || '',
+      type: 'Material',
+      sector: record.sector || '',
+      item: record.itemDescription || '',
+      vendor: 'Blue Star Limited (R 3)',
+      moc: record.moc || '',
+      uom: record.unit || '',
+      totalRate:
+        record.rppTotalRate ??
+        record.blueStarTotalRate ??
+        record.micronTotalRate ??
+        record.listenlightsTotalRate ??
+        record.jbTotalRate ??
+        record.pmcTotalRate ??
+        record.gleedsTotalRate ??
+        null,
+      slNo: record.id ?? null,
+      isEditing: false
+    };
+  }
+
+  private toProjectPayload(row: ProjectRow): ProjectDbPayload {
+    return {
+      slNo: row.slNo,
+      category: (row.category || '').trim() || null,
+      subPackage: (row.subPackage || '').trim() || null,
+      type: (row.type || 'Material').trim() || null,
+      sector: (row.sector || '').trim() || null,
+      project: (row.project || '').trim() || null,
+      year: this.normalizeYearForApi(row.year) || null,
+      moc: (row.moc || '').trim() || null,
+      itemDescription: (row.item || '').trim() || null,
+      unit: (row.uom || '').trim() || null,
+      rate: row.totalRate
+    };
+  }
+
+  private normalizeYearForDisplay(value: string): string {
+    const clean = (value || '').trim();
+    if (/^\d{4}-\d{4}$/.test(clean)) {
+      return `${clean.slice(0, 4)} - ${clean.slice(5)}`;
+    }
+    return clean;
+  }
+
+  private normalizeYearForApi(value: string): string {
+    return (value || '').replace(/\s+/g, '');
+  }
 
   private refreshRows(): void {
     const filtered = this.allRows.filter((row) => {
@@ -238,7 +357,7 @@ export class ProjectSpecificDatabaseComponent {
       return yearOk && locationOk && vendorOk && categoryOk && keywordOk;
     });
 
-    this.rows = filtered.sort((a, b) => {
+    this.rows = [...filtered].sort((a, b) => {
       const aValue = (a as any)[this.sortKey];
       const bValue = (b as any)[this.sortKey];
 
@@ -264,11 +383,15 @@ export class ProjectSpecificDatabaseComponent {
       location: '',
       project: '',
       category: '',
+      subPackage: '',
+      type: 'Material',
+      sector: '',
       item: '',
-      vendor: '',
+      vendor: 'Blue Star Limited (R 3)',
       moc: '',
       uom: '',
       totalRate: null,
+      slNo: 1,
       isEditing: false
     };
   }

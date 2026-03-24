@@ -1,7 +1,12 @@
 import { Component, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LocationSpecificDatabaseComponent } from './location-specific-database.component';
 import { ProjectSpecificDatabaseComponent } from './project-specific-database.component';
 import { RawMaterialDatabaseComponent } from './raw-material-database.component';
+import { CostLocationService } from '../../core/services/cost-location.service';
+import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
+import { ImportModalComponent } from './import-modal.component';
 
 type TabKey = 'raw-material' | 'location-specific' | 'project-specific';
 type SortDirection = 'asc' | 'desc';
@@ -13,7 +18,16 @@ interface Category {
 
 @Component({
   selector: 'app-cost-database',
-  standalone: false,
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    AutocompleteComponent,
+    ImportModalComponent,
+    RawMaterialDatabaseComponent,
+    LocationSpecificDatabaseComponent,
+    ProjectSpecificDatabaseComponent
+  ],
   templateUrl: './cost-database.component.html',
   styleUrl: './cost-database.component.css'
 })
@@ -68,6 +82,8 @@ export class CostDatabaseComponent {
   };
 
   readonly categoryOptions = ['All', ...this.categoryApiResponse.payload.map(c => c.name)];
+
+  constructor(private costLocationService: CostLocationService) {}
 
   get activeTabLabel(): string {
     if (this.activeTab === 'raw-material') {
@@ -129,10 +145,28 @@ export class CostDatabaseComponent {
   }
 
   handleImport(data: { file: File | null; type: 'append' | 'replace' }): void {
-    console.log('Import data:', data);
-    // Placeholder for actual import logic
-    // For now it just closes the modal
-    this.showImportModal = false;
+    if (!data.file) {
+      alert('Please select a file to import.');
+      this.showImportModal = false;
+      return;
+    }
+
+    this.costLocationService.importLocations(data.file, data.type).subscribe({
+      next: (res) => {
+        alert(res?.message || 'Import completed.');
+        if (this.activeTab === 'location-specific') {
+          this.locationTab?.reloadData();
+        } else if (this.activeTab === 'project-specific') {
+          this.projectTab?.reloadData();
+        }
+        this.showImportModal = false;
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Import failed.');
+        this.showImportModal = false;
+      }
+    });
   }
 
   openFilterSidebar(): void {
@@ -200,5 +234,17 @@ export class CostDatabaseComponent {
       return;
     }
     this.locationTab?.saveActive();
+  }
+
+  exportActiveTab(): void {
+    if (this.activeTab === 'location-specific') {
+      this.locationTab?.exportData();
+      return;
+    }
+    if (this.activeTab === 'project-specific') {
+      this.projectTab?.exportData();
+      return;
+    }
+    alert('Export is currently not enabled for Raw Material Database.');
   }
 }

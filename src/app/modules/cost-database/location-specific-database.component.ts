@@ -1,29 +1,16 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import {
+  CostDatabaseResponse,
+  CostLocationRecord,
+  CostLocationService,
+  CostLocationUpsertPayload
+} from '../../core/services/cost-location.service';
+import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
 
 type SortDirection = 'asc' | 'desc';
-
-interface ApiResponse {
-  status: string;
-  message: string;
-  payload: ApiPayloadRow[];
-  statusCode: number;
-}
-
-interface ApiPayloadRow {
-  id: number;
-  categoryName: string;
-  subCategoryName: string;
-  itemTypeName: string;
-  itemName: string;
-  moc: string;
-  uom: string;
-  vendorName: string;
-  monthLabel: string;
-  quarterLabel: string;
-  yearLabel: string;
-  priceDate: number[];
-  project: string;
-}
 
 interface TableRow {
   id: number;
@@ -32,21 +19,31 @@ interface TableRow {
   sector: string;
   projectLocation: string;
   category: string;
+  subCategory: string;
   shortItemSpecification: string;
   vendorName: string;
   moc: string;
   uom: string;
+  blueStarTotalRate: number | null;
+  micronTotalRate: number | null;
+  rppTotalRate: number | null;
+  listenlightsTotalRate: number | null;
+  jbTotalRate: number | null;
+  pmcTotalRate: number | null;
+  gleedsTotalRate: number | null;
   totalRate: number | null;
+  blueStarInstallationRate: number | null;
   isEditing: boolean;
 }
 
 @Component({
   selector: 'app-location-specific-database',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, AutocompleteComponent],
   templateUrl: './location-specific-database.component.html',
   styleUrl: './location-specific-database.component.css'
 })
-export class LocationSpecificDatabaseComponent {
+export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   @Input() filterYear = '';
   @Input() filterLocation = '';
   @Input() filterVendor = '';
@@ -56,57 +53,28 @@ export class LocationSpecificDatabaseComponent {
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
-  sortKey: string = 'totalRate';
+
+  sortKey = 'blueStarTotalRate';
   showInputRow = false;
- drum: string = ''; // Placeholder if needed, but sortKey is the main one
-
-
-
-
-  readonly response: ApiResponse = {
-    status: 'SUCCESS',
-    message: 'OK',
-    payload: [
-      {
-        id: 3,
-        categoryName: 'test',
-        subCategoryName: 'Real Estate',
-        itemTypeName: 'test CATE',
-        itemName: '3 core 300 sq. mm Al arm (E)',
-        moc: 'HT cable',
-        uom: 'RM',
-        vendorName: 'ABC Vendor Pvt Ltd',
-        monthLabel: 'January',
-        quarterLabel: 'Q1',
-        yearLabel: '2026',
-        priceDate: [2026, 2, 25],
-        project: 'New Sunrise'
-      },
-      {
-        id: 2,
-        categoryName: 'test',
-        subCategoryName: 'Real Estate',
-        itemTypeName: 'test CATE',
-        itemName: '2 core 2.5 sq.mm Cu cable',
-        moc: 'Cu cable',
-        uom: 'RM',
-        vendorName: 'ABC Vendor Pvt Ltd',
-        monthLabel: 'January',
-        quarterLabel: 'Q1',
-        yearLabel: '2026',
-        priceDate: [2026, 2, 25],
-        project: 'Project Sunrise'
-      }
-    ],
-    statusCode: 200
-  };
-
   inputRow: TableRow = this.createEmptyInputRow();
 
-  private readonly allRows: TableRow[] = this.buildRowsFromApi();
-  rows: TableRow[] = [...this.allRows];
+  private allRows: TableRow[] = [];
+  private originalsById = new Map<number, TableRow>();
+  rows: TableRow[] = [];
   readonly pageSize = 10;
   currentPage = 1;
+
+  constructor(private costLocationService: CostLocationService) {}
+
+  ngOnInit(): void {
+    this.loadLocations();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['filterToken'] || changes['sortToken']) {
+      this.refreshRows();
+    }
+  }
 
   get pagedRows(): TableRow[] {
     const start = (this.currentPage - 1) * this.pageSize;
@@ -141,26 +109,7 @@ export class LocationSpecificDatabaseComponent {
     this.pagedRows.forEach(r => (r.selected = checked));
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['filterToken'] || changes['sortToken']) {
-      this.refreshRows();
-    }
-  }
-
-  addFromInput(): void {
-    const trimmedItem = this.inputRow.shortItemSpecification.trim();
-    if (!trimmedItem) {
-      return;
-    }
-
-    this.allRows.unshift({
-      ...this.inputRow,
-      id: Date.now(),
-      selected: true
-    });
-
-    this.inputRow = this.createEmptyInputRow();
-    this.showInputRow = false;
+  applyFilterSort(): void {
     this.refreshRows();
   }
 
@@ -176,10 +125,26 @@ export class LocationSpecificDatabaseComponent {
     this.inputRow = this.createEmptyInputRow();
   }
 
-  applyFilterSort(): void {
-    this.refreshRows();
-  }
+  addFromInput(): void {
+    const trimmedItem = this.inputRow.shortItemSpecification.trim();
+    if (!trimmedItem) {
+      return;
+    }
 
+    const payload = this.toPayload(this.inputRow);
+    this.costLocationService.createLocation(payload).subscribe({
+      next: (res) => {
+        alert(res?.message || 'Created');
+        this.showInputRow = false;
+        this.inputRow = this.createEmptyInputRow();
+        this.loadLocations();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to create location record.');
+      }
+    });
+  }
 
   onSort(key: string): void {
     if (this.sortKey === key) {
@@ -192,16 +157,30 @@ export class LocationSpecificDatabaseComponent {
   }
 
   deleteSelectedRows(): void {
-    const remaining = this.allRows.filter(row => !row.selected);
-    if (remaining.length !== this.allRows.length) {
-      (this as any).allRows = remaining;
-      this.refreshRows();
+    const selectedIds = this.allRows.filter(r => r.selected).map(r => r.id);
+    if (!selectedIds.length) {
+      return;
     }
+
+    const deletes = selectedIds.map(id => this.costLocationService.deleteLocation(id));
+    forkJoin(deletes).subscribe({
+      next: () => {
+        alert('Deleted successfully.');
+        this.loadLocations();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to delete selected rows.');
+      }
+    });
   }
 
   editSelectedRows(): void {
     this.rows.forEach(row => {
       if (row.selected) {
+        if (!this.originalsById.has(row.id)) {
+          this.originalsById.set(row.id, { ...row });
+        }
         row.isEditing = true;
       }
     });
@@ -210,20 +189,74 @@ export class LocationSpecificDatabaseComponent {
   saveActive(): void {
     if (this.showInputRow) {
       this.addFromInput();
-    } else {
-      const editing = this.rows.filter(r => r.isEditing);
-      editing.forEach(r => this.saveRow(r));
+      return;
     }
+
+    const editingRows = this.rows.filter(r => r.isEditing);
+    if (!editingRows.length) {
+      return;
+    }
+
+    const updates: Observable<any>[] = editingRows.map((row) =>
+      this.costLocationService.updateLocation(row.id, this.toPayload(row))
+    );
+
+    forkJoin(updates).subscribe({
+      next: () => {
+        alert('Updated successfully.');
+        this.loadLocations();
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to update records.');
+      }
+    });
   }
 
   saveRow(row: TableRow): void {
+    this.costLocationService.updateLocation(row.id, this.toPayload(row)).subscribe({
+      next: () => {
+        row.isEditing = false;
+        row.selected = false;
+        this.originalsById.delete(row.id);
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to update record.');
+      }
+    });
+  }
+
+  cancelRowEdit(row: TableRow): void {
+    const original = this.originalsById.get(row.id);
+    if (original) {
+      Object.assign(row, { ...original, isEditing: false, selected: false });
+      this.originalsById.delete(row.id);
+      return;
+    }
     row.isEditing = false;
     row.selected = false;
   }
 
-  cancelRowEdit(row: TableRow): void {
-    row.isEditing = false;
-    this.refreshRows();
+  exportData(): void {
+    this.costLocationService.exportLocations().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cost-location-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Export failed.');
+      }
+    });
+  }
+
+  reloadData(): void {
+    this.loadLocations();
   }
 
   previousPage(): void {
@@ -238,34 +271,120 @@ export class LocationSpecificDatabaseComponent {
     }
   }
 
+  private loadLocations(): void {
+    this.fetchAllLocationRows().subscribe({
+      next: (res) => {
+        this.allRows = res.map((record) => this.mapApiToRow(record));
+        this.originalsById.clear();
+        this.refreshRows();
+      },
+      error: (err) => {
+        console.warn('Cost location API failed. Loading demo data.', err);
+        const fallback: CostDatabaseResponse<CostLocationRecord> =
+          this.costLocationService.getLocationDemoResponse();
+        this.allRows = fallback.payload.map((record) => this.mapApiToRow(record));
+        this.originalsById.clear();
+        this.refreshRows();
+      }
+    });
+  }
 
-  private buildRowsFromApi(): TableRow[] {
-    const mapped = this.response.payload.map((entry, index) => ({
-      id: entry.id,
+  private fetchAllLocationRows(): Observable<CostLocationRecord[]> {
+    const pageSize = 200;
+    return this.costLocationService.getLocationsPage(0, pageSize).pipe(
+      switchMap((firstPage) => {
+        const firstContent = firstPage?.content || [];
+        const totalPages = Math.max(firstPage?.totalPages || 1, 1);
+        if (totalPages <= 1) {
+          return of(firstContent);
+        }
+
+        const remainingRequests: Observable<CostLocationRecord[]>[] = [];
+        for (let page = 1; page < totalPages; page += 1) {
+          remainingRequests.push(
+            this.costLocationService.getLocationsPage(page, pageSize).pipe(
+              map((response) => response?.content || [])
+            )
+          );
+        }
+
+        return forkJoin(remainingRequests).pipe(
+          map((remainingPages) => [firstContent, ...remainingPages].flat())
+        );
+      })
+    );
+  }
+
+  private mapApiToRow(record: CostLocationRecord): TableRow {
+    return {
+      id: record.id,
       selected: false,
-      year: '2024 - 2025',
-      sector: entry.subCategoryName,
-      projectLocation: 'BLR',
-      category: entry.itemTypeName,
-      shortItemSpecification: entry.itemName,
+      year: this.normalizeYearForDisplay(record.year),
+      sector: record.sector || '',
+      projectLocation: record.projectLocation || '',
+      category: record.category || '',
+      subCategory: record.subCategory || '',
+      shortItemSpecification: record.itemDescription || '',
       vendorName: 'Blue Star Limited (R 3)',
-      moc: entry.moc,
-      uom: entry.uom,
-      totalRate: index === 0 ? 2892 : 2628,
+      moc: record.moc || '',
+      uom: record.unit || '',
+      blueStarInstallationRate: record.blueStarInstallationRate,
+      blueStarTotalRate: record.blueStarTotalRate,
+      micronTotalRate: record.micronTotalRate,
+      rppTotalRate: record.rppTotalRate,
+      listenlightsTotalRate: record.listenlightsTotalRate,
+      jbTotalRate: record.jbTotalRate,
+      pmcTotalRate: record.pmcTotalRate,
+      gleedsTotalRate: record.gleedsTotalRate,
+      totalRate: this.pickTotalRate(record),
       isEditing: false
-    }));
+    };
+  }
 
+  private toPayload(row: TableRow): CostLocationUpsertPayload {
+    return {
+      year: this.normalizeYearForApi(row.year),
+      sector: (row.sector || '').trim(),
+      projectLocation: (row.projectLocation || '').trim(),
+      category: (row.category || '').trim(),
+      subCategory: (row.subCategory || '').trim(),
+      moc: (row.moc || '').trim(),
+      itemDescription: (row.shortItemSpecification || '').trim(),
+      unit: (row.uom || '').trim(),
+      blueStarInstallationRate: row.blueStarInstallationRate,
+      blueStarTotalRate: row.blueStarTotalRate,
+      micronTotalRate: row.micronTotalRate,
+      rppTotalRate: row.rppTotalRate,
+      listenlightsTotalRate: row.listenlightsTotalRate,
+      jbTotalRate: row.jbTotalRate,
+      pmcTotalRate: row.pmcTotalRate,
+      gleedsTotalRate: row.gleedsTotalRate
+    };
+  }
 
-    const clones: TableRow[] = [];
-    for (let i = 0; i < 18; i += 1) {
-      const source = mapped[i % mapped.length];
-      clones.push({
-        ...source,
-        id: source.id * 100 + i,
-        selected: false
-      });
+  private pickTotalRate(record: CostLocationRecord): number | null {
+    return (
+      record.blueStarTotalRate ??
+      record.micronTotalRate ??
+      record.rppTotalRate ??
+      record.listenlightsTotalRate ??
+      record.jbTotalRate ??
+      record.pmcTotalRate ??
+      record.gleedsTotalRate ??
+      null
+    );
+  }
+
+  private normalizeYearForDisplay(value: string): string {
+    const clean = (value || '').trim();
+    if (/^\d{4}-\d{4}$/.test(clean)) {
+      return `${clean.slice(0, 4)} - ${clean.slice(5)}`;
     }
-    return [...mapped, ...clones];
+    return clean;
+  }
+
+  private normalizeYearForApi(value: string): string {
+    return (value || '').replace(/\s+/g, '');
   }
 
   private refreshRows(): void {
@@ -280,10 +399,11 @@ export class LocationSpecificDatabaseComponent {
         row.shortItemSpecification.toLowerCase().includes(search) ||
         row.vendorName.toLowerCase().includes(search) ||
         row.moc.toLowerCase().includes(search);
+
       return yearOk && locationOk && vendorOk && categoryOk && keywordOk;
     });
 
-    this.rows = filtered.sort((a, b) => {
+    this.rows = [...filtered].sort((a, b) => {
       const aValue = (a as any)[this.sortKey];
       const bValue = (b as any)[this.sortKey];
 
@@ -309,12 +429,22 @@ export class LocationSpecificDatabaseComponent {
       sector: '',
       projectLocation: '',
       category: '',
+      subCategory: '',
       shortItemSpecification: '',
-      vendorName: '',
+      vendorName: 'Blue Star Limited (R 3)',
       moc: '',
       uom: '',
+      blueStarInstallationRate: null,
+      blueStarTotalRate: null,
+      micronTotalRate: null,
+      rppTotalRate: null,
+      listenlightsTotalRate: null,
+      jbTotalRate: null,
+      pmcTotalRate: null,
+      gleedsTotalRate: null,
       totalRate: null,
       isEditing: false
     };
   }
 }
+
