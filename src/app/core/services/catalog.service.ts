@@ -38,7 +38,7 @@ export interface HierarchyResponse {
   providedIn: 'root'
 })
 export class CatalogService {
-  private baseUrl = 'http://localhost:3000/api/catalog'; 
+  private baseUrl = '/api/catalog';
 
   constructor(private http: HttpClient) {}
 
@@ -246,5 +246,37 @@ export class CatalogService {
       payload: { id: Date.now(), ...payload },
       statusCode: 200
     }).pipe(delay(500));
+  }
+
+  updateSubCategory(id: number, payload: { categoryId: number; name: string }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/sub-categories/${id}`, payload);
+  }
+
+  updateCategory(id: number, payload: { name: string }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/categories/${id}`, payload);
+  }
+
+  updateType(id: number, payload: { subCategoryId: number; name: string }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/types/${id}`, payload);
+  }
+
+  updateItem(id: number, payload: { itemTypeId: number; name: string }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/items/${id}`, payload);
+  }
+
+  deleteCategory(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/categories/${id}`);
+  }
+
+  deleteSubCategory(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/sub-categories/${id}`);
+  }
+
+  deleteType(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/types/${id}`);
+  }
+
+  deleteItem(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/items/${id}`);
   }
 }

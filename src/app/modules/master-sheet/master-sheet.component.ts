@@ -23,6 +23,8 @@ export interface TableRow {
   uom?: string;
 }
 
+type EditMode = 'category' | 'subcategory' | 'type' | 'item' | null;
+
 @Component({
   selector: 'app-master-sheet',
   standalone: true,
@@ -36,19 +38,23 @@ export class MasterSheetComponent implements OnInit {
   isLoading = false;
   
   selectedItem: TableRow | null = null;
+  editMode: EditMode = null;
+  showDeleteConfirm = false;
 
-  // New mapping states (sidebar mapping)
+  // Shared options
   categoryOptions: any[] = [];
-  subCategoryOptions: any[] = [];
-  typeOptions: any[] = [];
-  itemOptions: any[] = [];
+  editSubCategoryOptions: any[] = [];
+  editTypeOptions: any[] = [];
 
-  newMapping = {
+  editPayload = {
+    name: '',
     categoryId: null as number | null,
     subCategoryId: null as number | null,
-    typeId: null as number | null,
-    itemId: null as number | null
+    itemTypeId: null as number | null
   };
+
+  subCategoryOptions: any[] = [];
+  typeOptions: any[] = [];
 
   // Creation Modal states
   showCreateModalType: 'category' | 'subcategory' | 'type' | 'item' | null = null;
@@ -180,19 +186,7 @@ export class MasterSheetComponent implements OnInit {
     return visible;
   }
 
-  openSidebar(row: TableRow): void {
-    if (!row.isCategory) {
-      this.selectedItem = row;
-      this.prepopulateMapping(row);
-    }
-  }
-
-  closeSidebar(): void {
-    this.selectedItem = null;
-  }
-
-  // --- Mapping Sidebar Cascade Logistics ---
-
+  // --- Row Edit Sidebar ---
   loadMappingCategories(): void {
     this.catalogService.getCategories().subscribe(res => {
       if (res && res.payload) {
@@ -201,90 +195,227 @@ export class MasterSheetComponent implements OnInit {
     });
   }
 
-  prepopulateMapping(row: TableRow): void {
-    this.newMapping = { categoryId: null, subCategoryId: null, typeId: null, itemId: null };
-    this.subCategoryOptions = [];
-    this.typeOptions = [];
-    this.itemOptions = [];
+  openEditSidebar(mode: Exclude<EditMode, null>, row: TableRow, event?: MouseEvent): void {
+    event?.stopPropagation();
 
-    this.newMapping.categoryId = row.categoryId || null;
+    this.selectedItem = row;
+    this.editMode = mode;
+    this.showDeleteConfirm = false;
+    const selectedCategoryName = this.categories.find(c => c.id === row.categoryId)?.name || '';
+    this.editPayload = {
+      name:
+        mode === 'category'
+          ? selectedCategoryName
+          : mode === 'subcategory'
+          ? (row.subCategoryName || '')
+          : mode === 'type'
+          ? (row.typeName || '')
+          : (row.itemName || ''),
+      categoryId: row.categoryId || null,
+      subCategoryId: row.subCategoryId || null,
+      itemTypeId: row.typeId || null
+    };
+
+    this.editSubCategoryOptions = [];
+    this.editTypeOptions = [];
     if (this.categoryOptions.length === 0) {
       this.loadMappingCategories();
     }
 
-    if (row.categoryId) {
-      this.catalogService.getSubCategories(row.categoryId).subscribe(res => {
-        if (res && res.payload) {
-          this.subCategoryOptions = res.payload;
-          this.newMapping.subCategoryId = row.subCategoryId || null;
-          if (row.subCategoryId) {
-            this.catalogService.getTypes(row.subCategoryId).subscribe(resType => {
-              if (resType && resType.payload) {
-                this.typeOptions = resType.payload;
-                this.newMapping.typeId = row.typeId || null;
-                if (row.typeId) {
-                  this.catalogService.getItems(row.typeId).subscribe(resItem => {
-                    if (resItem && resItem.payload) {
-                      this.itemOptions = resItem.payload;
-                      this.newMapping.itemId = row.itemId || null;
-                    }
-                  });
-                }
-              }
-            });
-          }
+    if (this.editPayload.categoryId && (mode === 'type' || mode === 'item')) {
+      this.catalogService.getSubCategories(this.editPayload.categoryId).subscribe(res => {
+        if (res?.payload) {
+          this.editSubCategoryOptions = res.payload;
+        }
+      });
+    }
+    if (this.editPayload.subCategoryId && mode === 'item') {
+      this.catalogService.getTypes(this.editPayload.subCategoryId).subscribe(res => {
+        if (res?.payload) {
+          this.editTypeOptions = res.payload;
         }
       });
     }
   }
 
-  resetMappingForm(): void {
-    this.newMapping = { categoryId: null, subCategoryId: null, typeId: null, itemId: null };
-    this.subCategoryOptions = [];
-    this.typeOptions = [];
-    this.itemOptions = [];
-    if (this.categoryOptions.length === 0) {
-      this.loadMappingCategories();
-    }
+  closeSidebar(): void {
+    this.showDeleteConfirm = false;
+    this.selectedItem = null;
+    this.editMode = null;
+    this.editPayload = { name: '', categoryId: null, subCategoryId: null, itemTypeId: null };
+    this.editSubCategoryOptions = [];
+    this.editTypeOptions = [];
   }
 
-  onCategoryChange(val: any): void {
-    this.subCategoryOptions = [];
-    this.typeOptions = [];
-    this.itemOptions = [];
-    this.newMapping.subCategoryId = null;
-    this.newMapping.typeId = null;
-    this.newMapping.itemId = null;
+  onEditCategoryChange(): void {
+    this.editSubCategoryOptions = [];
+    this.editTypeOptions = [];
+    this.editPayload.subCategoryId = null;
+    this.editPayload.itemTypeId = null;
 
-    if (this.newMapping.categoryId) {
-      this.catalogService.getSubCategories(this.newMapping.categoryId).subscribe(res => {
-        if (res && res.payload) this.subCategoryOptions = res.payload;
-      });
+    if (!this.editPayload.categoryId) {
+      return;
     }
+    this.catalogService.getSubCategories(this.editPayload.categoryId).subscribe(res => {
+      if (res?.payload) {
+        this.editSubCategoryOptions = res.payload;
+      }
+    });
   }
 
-  onSubCategoryChange(val: any): void {
-    this.typeOptions = [];
-    this.itemOptions = [];
-    this.newMapping.typeId = null;
-    this.newMapping.itemId = null;
+  onEditSubCategoryChange(): void {
+    this.editTypeOptions = [];
+    this.editPayload.itemTypeId = null;
 
-    if (this.newMapping.subCategoryId) {
-      this.catalogService.getTypes(this.newMapping.subCategoryId).subscribe(res => {
-        if (res && res.payload) this.typeOptions = res.payload;
-      });
+    if (!this.editPayload.subCategoryId) {
+      return;
     }
+    this.catalogService.getTypes(this.editPayload.subCategoryId).subscribe(res => {
+      if (res?.payload) {
+        this.editTypeOptions = res.payload;
+      }
+    });
   }
 
-  onTypeChange(val: any): void {
-    this.itemOptions = [];
-    this.newMapping.itemId = null;
+  saveEdit(): void {
+    if (!this.selectedItem || !this.editMode) {
+      return;
+    }
 
-    if (this.newMapping.typeId) {
-      this.catalogService.getItems(this.newMapping.typeId).subscribe(res => {
-        if (res && res.payload) this.itemOptions = res.payload;
+    const name = (this.editPayload.name || '').trim();
+    if (!name) {
+      alert('Name is required.');
+      return;
+    }
+
+    let obs: Observable<any> | null = null;
+
+    if (this.editMode === 'category') {
+      if (!this.selectedItem.categoryId) {
+        alert('Category information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.updateCategory(this.selectedItem.categoryId, { name });
+    } else if (this.editMode === 'subcategory') {
+      if (!this.selectedItem.subCategoryId || !this.editPayload.categoryId) {
+        alert('Subcategory information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.updateSubCategory(this.selectedItem.subCategoryId, {
+        categoryId: this.editPayload.categoryId,
+        name
+      });
+    } else if (this.editMode === 'type') {
+      if (!this.selectedItem.typeId || !this.editPayload.subCategoryId) {
+        alert('Type information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.updateType(this.selectedItem.typeId, {
+        subCategoryId: this.editPayload.subCategoryId,
+        name
+      });
+    } else if (this.editMode === 'item') {
+      if (!this.selectedItem.itemId || !this.editPayload.itemTypeId) {
+        alert('Item information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.updateItem(this.selectedItem.itemId, {
+        itemTypeId: this.editPayload.itemTypeId,
+        name
       });
     }
+
+    if (!obs) {
+      return;
+    }
+
+    obs.subscribe({
+      next: (res) => {
+        if (res?.status === 'SUCCESS') {
+          alert(res.message || 'Updated');
+          this.closeSidebar();
+          this.fetchData();
+        } else {
+          alert(res?.message || 'Update failed');
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        alert('An error occurred while updating.');
+      }
+    });
+  }
+
+  openDeleteConfirm(event?: MouseEvent): void {
+    event?.stopPropagation();
+    if (!this.selectedItem || !this.editMode) {
+      return;
+    }
+    this.showDeleteConfirm = true;
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm = false;
+  }
+
+  confirmDelete(): void {
+    if (!this.selectedItem || !this.editMode) {
+      return;
+    }
+
+    let obs: Observable<any> | null = null;
+
+    if (this.editMode === 'category') {
+      if (!this.selectedItem.categoryId) {
+        alert('Category information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.deleteCategory(this.selectedItem.categoryId);
+    } else if (this.editMode === 'subcategory') {
+      if (!this.selectedItem.subCategoryId) {
+        alert('Subcategory information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.deleteSubCategory(this.selectedItem.subCategoryId);
+    } else if (this.editMode === 'type') {
+      if (!this.selectedItem.typeId) {
+        alert('Type information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.deleteType(this.selectedItem.typeId);
+    } else if (this.editMode === 'item') {
+      if (!this.selectedItem.itemId) {
+        alert('Item information is incomplete.');
+        return;
+      }
+      obs = this.catalogService.deleteItem(this.selectedItem.itemId);
+    }
+
+    if (!obs) {
+      return;
+    }
+
+    obs.subscribe({
+      next: (res) => {
+        if (res?.status === 'SUCCESS') {
+          alert(res?.message || 'Deleted');
+          this.closeDeleteConfirm();
+          this.closeSidebar();
+          this.fetchData();
+        } else {
+          alert(res?.message || 'Delete failed');
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        const backendMessage =
+          err?.error?.message ||
+          err?.error?.responseMessage ||
+          err?.message ||
+          'An error occurred while deleting.';
+        alert(backendMessage);
+      }
+    });
   }
 
   // --- Creation Modal Logistics ---

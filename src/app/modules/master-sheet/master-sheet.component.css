@@ -1,10 +1,15 @@
 .master-sheet-page {
   background-color: #F8FAFC;
   min-height: 100vh;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Open Sans';
   color: #344054;
   margin: 0;
-  padding: 16px 24px;
+  padding: 16px clamp(12px, 2vw, 24px);
+  box-sizing: border-box;
+}
+
+.master-sheet-page * {
+  font-family: 'Open Sans';
 }
 
 .page-top-header {
@@ -13,7 +18,6 @@
   align-items: center;
   margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 10px;
 }
 
 .page-top-header h2 {
@@ -22,11 +26,8 @@
   color: #1a1f36;
   margin: 0;
 }
-
-
 .header-right {
   display: flex;
-  gap: 12px;
 }
 
 .analytics-btn {
@@ -58,36 +59,20 @@
   margin-bottom: 20px;
 }
 
-.add-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 14px;
-  cursor: pointer;
-  background-color: #E0E7FF;
-  color: #3730A3;
-  border: none;
-}
-
-.add-btn:hover {
-  background-color: #C7D2FE;
-}
-
 .table-container {
   background: white;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   border: 1px solid #E5E7EB;
   border-radius: 8px;
   overflow: hidden;
+  width: 100%;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  min-width: 920px;
 }
 
 .data-table th {
@@ -106,46 +91,8 @@
   border-bottom: 1px solid #E5E7EB;
 }
 
-th.col-uom, th.col-srno {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .col-srno {
   width: 80px;
-}
-
-.sort-icon {
-  flex-shrink: 0;
-}
-
-.col-checkbox {
-  width: 48px;
-  text-align: center;
-  padding: 14px 8px !important;
-}
-
-/* Checkbox styling */
-.row-checkbox {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  border: 1px solid #D1D5DB;
-  border-radius: 4px;
-  accent-color: #3B82F6;
-}
-
-.collapse-all-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: 1px solid #93C5FD;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #3B82F6;
 }
 
 /* Category row */
@@ -154,8 +101,16 @@ th.col-uom, th.col-srno {
   cursor: pointer;
 }
 
+.category-row td {
+  background-color: inherit;
+}
+
 .category-row:hover {
   background-color: #EEF2FF !important;
+}
+
+.category-row:hover td {
+  background-color: inherit;
 }
 
 .category-cell {
@@ -203,6 +158,14 @@ th.col-uom, th.col-srno {
   background-color: #F9FAFB;
 }
 
+.clickable-cell {
+  cursor: pointer;
+}
+
+.clickable-cell:hover {
+  color: #1D4ED8;
+}
+
 .text-blue {
   color: #3B82F6;
 }
@@ -214,6 +177,8 @@ th.col-uom, th.col-srno {
   align-items: center;
   padding: 16px 24px;
   background-color: white;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .page-info {
@@ -223,7 +188,6 @@ th.col-uom, th.col-srno {
 
 .page-actions {
   display: flex;
-  gap: 8px;
 }
 
 .page-btn {
@@ -257,7 +221,7 @@ th.col-uom, th.col-srno {
   position: fixed;
   top: 0;
   right: -400px;
-  width: 360px;
+  width: min(360px, 100vw);
   height: 100vh;
   background-color: #F8FAFC;
   box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
@@ -368,6 +332,7 @@ th.col-uom, th.col-srno {
   font-size: 13px;
   color: #374151;
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .arrow-down {
@@ -428,7 +393,7 @@ th.col-uom, th.col-srno {
 }
 
 .save-btn {
-  width: 100%;
+  min-width: 130px;
   background-color: #2563EB;
   color: white;
   border: none;
@@ -444,25 +409,114 @@ th.col-uom, th.col-srno {
   background-color: #1D4ED8;
 }
 
+.sidebar-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.delete-btn {
+  min-width: 110px;
+  background-color: #DC2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #B91C1C;
+}
+
+.delete-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1100;
+}
+
+.delete-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 24px));
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  z-index: 1101;
+}
+
+.delete-modal h4 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  color: #111827;
+}
+
+.delete-modal p {
+  margin: 0;
+  font-size: 14px;
+  color: #4B5563;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn-no,
+.btn-yes {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-no {
+  background: #E5E7EB;
+  color: #111827;
+}
+
+.btn-yes {
+  background: #DC2626;
+  color: #fff;
+}
+
 /* Responsive Styles */
 
 /* Base adjustment for table overflow */
 .table-container {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 1024px) {
-  /* Add subtle scrollbar for the table if needed */
+  .master-sheet-page {
+    padding: 14px 16px;
+  }
+
   .data-table {
-    min-width: 800px; /* Force scroll on small screens */
+    min-width: 760px;
   }
 }
 
 @media (max-width: 768px) {
+  .master-sheet-page {
+    padding: 12px;
+  }
+
   .page-top-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 12px;
   }
   
   .header-right {
@@ -474,23 +528,122 @@ th.col-uom, th.col-srno {
     justify-content: center;
   }
   
-  .main-content {
-    padding: 16px;
-  }
-  
   .toolbar-row {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    justify-content: stretch;
   }
-  
-  .add-btn {
+
+  .toolbar-row .dropdown {
     width: 100%;
-    justify-content: center;
+  }
+
+  .toolbar-row .btn {
+    width: 100%;
+  }
+
+  .table-container {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .data-table {
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .item-row,
+  .category-row {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .data-table td {
+    border-bottom: 1px solid #F1F5F9;
+    padding: 10px 12px;
+  }
+
+  .item-row td:last-child,
+  .category-row td:last-child {
+    border-bottom: 0;
+  }
+
+  .item-row td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    color: #6B7280;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .category-row .col-srno {
+    display: none;
+  }
+
+  .category-cell {
+    padding: 0 !important;
+  }
+
+  .category-cell > div:first-child,
+  .category-cell .chevron-wrapper {
+    float: none;
+    padding: 12px;
+  }
+
+  .category-cell > div:first-child {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    width: calc(100% - 44px);
+  }
+
+  .category-cell .chevron-wrapper {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
   }
   
   .pagination {
     flex-direction: column;
-    gap: 16px;
-    align-items: center;
+    align-items: stretch;
+    padding: 12px 0 0;
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .page-info {
+    text-align: center;
+  }
+
+  .modal-dialog {
+    margin: 0.75rem;
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .modal-content {
+    max-height: calc(100vh - 1.5rem);
+    overflow-y: auto;
   }
 }
 
@@ -503,22 +656,34 @@ th.col-uom, th.col-srno {
   .page-top-header h2 {
     font-size: 18px;
   }
-  
-  .main-content {
-    padding: 12px;
-  }
-  
-  .page-info {
-    text-align: center;
-  }
-  
-  .page-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
+
   .page-btn {
     flex: 1;
     text-align: center;
+  }
+
+  .save-btn,
+  .delete-btn {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .sidebar-footer-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sidebar-header,
+  .sidebar-body,
+  .sidebar-footer {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .master-sheet-page {
+    max-width: 1480px;
+    margin: 0 auto;
   }
 }
