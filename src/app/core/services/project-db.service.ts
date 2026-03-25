@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of, delay } from 'rxjs';
 
 export interface ProjectDbRecord {
   id: number;
@@ -106,7 +106,13 @@ export class ProjectDbService {
   constructor(private http: HttpClient) {}
 
   getProjectRecordsPage(page: number, size: number): Observable<ProjectDbPageResponse> {
-    return this.http.get<ProjectDbPageResponse>(`${this.baseUrl}?page=${page}&size=${size}`);
+    return of({
+      content: PROJECT_DEMO_RESPONSE.payload,
+      totalElements: PROJECT_DEMO_RESPONSE.payload.length,
+      totalPages: 1,
+      number: page,
+      size: size
+    }).pipe(delay(500));
   }
 
   getProjectDemoResponse(): ProjectDbResponse<ProjectDbRecord> {

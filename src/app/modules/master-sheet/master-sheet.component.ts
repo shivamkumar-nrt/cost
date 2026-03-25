@@ -441,7 +441,9 @@ export class MasterSheetComponent implements OnInit {
   }
 
   onCreateSubmit(): void {
+    console.log('--- TRIGGERING API CALL FOR CATEGORY CREATION ---');
     if (!this.showCreateModalType) return;
+
     const type = this.showCreateModalType;
     const payload = this.createPayload[type];
 
@@ -455,10 +457,11 @@ export class MasterSheetComponent implements OnInit {
     }
 
     obs.subscribe({
-      next: (res) => {
-        if (res.status === 'SUCCESS') {
-          alert('Successfully created!');
-          this.closeCreateModal();
+        next: (res) => {
+          if (res.status === 'SUCCESS') {
+            alert('Created Successfully! Status: ' + res.status);
+            this.closeCreateModal();
+
           this.fetchData();
         } else {
           alert(res.responseMessage || 'Creation failed');

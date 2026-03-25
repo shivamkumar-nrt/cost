@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of, delay } from 'rxjs';
 
 export interface CostLocationRecord {
   id: number;
@@ -94,11 +94,23 @@ export class CostLocationService {
   constructor(private http: HttpClient) {}
 
   getLocations(): Observable<CostLocationPageResponse> {
-    return this.http.get<CostLocationPageResponse>(this.baseUrl);
+    return of({
+      content: LOCATION_DEMO_RESPONSE.payload,
+      totalElements: LOCATION_DEMO_RESPONSE.payload.length,
+      totalPages: 1,
+      number: 0,
+      size: 200
+    }).pipe(delay(500));
   }
 
   getLocationsPage(page: number, size: number): Observable<CostLocationPageResponse> {
-    return this.http.get<CostLocationPageResponse>(`${this.baseUrl}?page=${page}&size=${size}`);
+    return of({
+      content: LOCATION_DEMO_RESPONSE.payload,
+      totalElements: LOCATION_DEMO_RESPONSE.payload.length,
+      totalPages: 1,
+      number: page,
+      size: size
+    }).pipe(delay(500));
   }
 
   getLocationDemoResponse(): CostDatabaseResponse<CostLocationRecord> {
