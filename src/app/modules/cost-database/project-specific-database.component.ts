@@ -1,13 +1,12 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import {
-  CostDatabaseResponse,
-  CostLocationRecord,
-  CostLocationService
-} from '../../core/services/cost-location.service';
-import { ProjectDbPayload, ProjectDbService } from '../../core/services/project-db.service';
+  ProjectDbPayload,
+  ProjectDbRecord,
+  ProjectDbService
+} from '../../core/services/project-db.service';
 import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
 
 type SortDirection = 'asc' | 'desc';
@@ -15,19 +14,26 @@ type SortDirection = 'asc' | 'desc';
 interface ProjectRow {
   id: number;
   selected: boolean;
+  slNo: number | null;
   year: string;
-  location: string;
+  sector: string;
+  projectLocation: string;
   project: string;
   category: string;
   subPackage: string;
   type: string;
-  sector: string;
   item: string;
-  vendor: string;
   moc: string;
   uom: string;
-  totalRate: number | null;
-  slNo: number | null;
+  blueStarInstallationRate: number | null;
+  blueStarTotalRate: number | null;
+  micronTotalRate: number | null;
+  rppTotalRate: number | null;
+  listenlightsTotalRate: number | null;
+  jbTotalRate: number | null;
+  pmcTotalRate: number | null;
+  gleedsTotalRate: number | null;
+  rate: number | null;
   isEditing: boolean;
 }
 
@@ -49,7 +55,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
 
-  sortKey = 'totalRate';
+  sortKey = 'blueStarTotalRate';
   showInputRow = false;
   inputRow: ProjectRow = this.createEmptyInputRow();
 
@@ -59,10 +65,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   readonly pageSize = 10;
   currentPage = 1;
 
-  constructor(
-    private costLocationService: CostLocationService,
-    private projectDbService: ProjectDbService
-  ) {}
+  constructor(private projectDbService: ProjectDbService) {}
 
   ngOnInit(): void {
     this.loadRows();
@@ -235,7 +238,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   exportData(): void {
-    this.costLocationService.exportLocations().subscribe({
+    this.projectDbService.exportProjectRecords().subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -268,16 +271,15 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   private loadRows(): void {
-    this.costLocationService.getLocations().subscribe({
-      next: (res) => {
-        this.allRows = (res?.content || []).map((record) => this.mapToProjectRow(record));
+    this.fetchAllProjectRows().subscribe({
+      next: (records) => {
+        this.allRows = records.map((record) => this.mapToProjectRow(record));
         this.originalsById.clear();
         this.refreshRows();
       },
       error: (err) => {
         console.warn('Project DB list API failed. Loading demo data.', err);
-        const fallback: CostDatabaseResponse<CostLocationRecord> =
-          this.costLocationService.getLocationDemoResponse();
+        const fallback = this.projectDbService.getProjectDemoResponse();
         this.allRows = fallback.payload.map((record) => this.mapToProjectRow(record));
         this.originalsById.clear();
         this.refreshRows();
@@ -285,31 +287,64 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     });
   }
 
-  private mapToProjectRow(record: CostLocationRecord): ProjectRow {
+  private fetchAllProjectRows(): Observable<ProjectDbRecord[]> {
+    const pageSize = 20;
+    return this.projectDbService.getProjectRecordsPage(0, pageSize).pipe(
+      switchMap((firstPage) => {
+        const firstContent = firstPage?.content || [];
+        const totalPages = Math.max(firstPage?.totalPages || 1, 1);
+        if (totalPages <= 1) {
+          return of(firstContent);
+        }
+
+        const remainingRequests: Observable<ProjectDbRecord[]>[] = [];
+        for (let page = 1; page < totalPages; page += 1) {
+          remainingRequests.push(
+            this.projectDbService.getProjectRecordsPage(page, pageSize).pipe(
+              map((response) => response?.content || [])
+            )
+          );
+        }
+
+        return forkJoin(remainingRequests).pipe(
+          map((remainingPages) => [firstContent, ...remainingPages].flat())
+        );
+      })
+    );
+  }
+
+  private mapToProjectRow(record: ProjectDbRecord): ProjectRow {
     return {
       id: record.id,
       selected: false,
+      slNo: record.id ?? null,
       year: this.normalizeYearForDisplay(record.year),
-      location: record.projectLocation || '',
+      sector: record.sector || '',
+      projectLocation: record.projectLocation || '',
       project: record.projectLocation || '',
       category: record.category || '',
       subPackage: record.subCategory || '',
       type: 'Material',
-      sector: record.sector || '',
       item: record.itemDescription || '',
-      vendor: 'Blue Star Limited (R 3)',
       moc: record.moc || '',
       uom: record.unit || '',
-      totalRate:
-        record.rppTotalRate ??
+      blueStarInstallationRate: record.blueStarInstallationRate,
+      blueStarTotalRate: record.blueStarTotalRate,
+      micronTotalRate: record.micronTotalRate,
+      rppTotalRate: record.rppTotalRate,
+      listenlightsTotalRate: record.listenlightsTotalRate,
+      jbTotalRate: record.jbTotalRate,
+      pmcTotalRate: record.pmcTotalRate,
+      gleedsTotalRate: record.gleedsTotalRate,
+      rate:
         record.blueStarTotalRate ??
         record.micronTotalRate ??
+        record.rppTotalRate ??
         record.listenlightsTotalRate ??
         record.jbTotalRate ??
         record.pmcTotalRate ??
         record.gleedsTotalRate ??
         null,
-      slNo: record.id ?? null,
       isEditing: false
     };
   }
@@ -321,13 +356,27 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
       subPackage: (row.subPackage || '').trim() || null,
       type: (row.type || 'Material').trim() || null,
       sector: (row.sector || '').trim() || null,
-      project: (row.project || '').trim() || null,
+      project: (row.project || row.projectLocation || '').trim() || null,
       year: this.normalizeYearForApi(row.year) || null,
       moc: (row.moc || '').trim() || null,
       itemDescription: (row.item || '').trim() || null,
       unit: (row.uom || '').trim() || null,
-      rate: row.totalRate
+      rate: this.pickRateFromRow(row)
     };
+  }
+
+  private pickRateFromRow(row: ProjectRow): number | null {
+    return (
+      row.rate ??
+      row.blueStarTotalRate ??
+      row.micronTotalRate ??
+      row.rppTotalRate ??
+      row.listenlightsTotalRate ??
+      row.jbTotalRate ??
+      row.pmcTotalRate ??
+      row.gleedsTotalRate ??
+      null
+    );
   }
 
   private normalizeYearForDisplay(value: string): string {
@@ -345,15 +394,16 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   private refreshRows(): void {
     const filtered = this.allRows.filter((row) => {
       const yearOk = !this.filterYear || row.year === this.filterYear;
-      const locationOk = !this.filterLocation || row.location === this.filterLocation;
-      const vendorOk = !this.filterVendor || row.vendor === this.filterVendor;
+      const locationOk = !this.filterLocation || row.projectLocation === this.filterLocation;
+      const vendorOk = !this.filterVendor || this.filterVendor === 'Blue Star Limited (R 3)';
       const categoryOk = !this.filterCategory || row.category === this.filterCategory;
       const search = this.filterKeyword.toLowerCase();
       const keywordOk =
         !search ||
         row.item.toLowerCase().includes(search) ||
         row.project.toLowerCase().includes(search) ||
-        row.vendor.toLowerCase().includes(search);
+        row.projectLocation.toLowerCase().includes(search) ||
+        row.moc.toLowerCase().includes(search);
       return yearOk && locationOk && vendorOk && categoryOk && keywordOk;
     });
 
@@ -379,19 +429,26 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     return {
       id: 0,
       selected: false,
+      slNo: 1,
       year: '',
-      location: '',
+      sector: '',
+      projectLocation: '',
       project: '',
       category: '',
       subPackage: '',
       type: 'Material',
-      sector: '',
       item: '',
-      vendor: 'Blue Star Limited (R 3)',
       moc: '',
       uom: '',
-      totalRate: null,
-      slNo: 1,
+      blueStarInstallationRate: null,
+      blueStarTotalRate: null,
+      micronTotalRate: null,
+      rppTotalRate: null,
+      listenlightsTotalRate: null,
+      jbTotalRate: null,
+      pmcTotalRate: null,
+      gleedsTotalRate: null,
+      rate: null,
       isEditing: false
     };
   }

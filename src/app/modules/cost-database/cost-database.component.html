@@ -4,8 +4,8 @@
       <h2>Cost Database</h2>
     </div>
     <div class="header-right">
-      <button class="ai-btn" type="button"><span class="icon">🪄</span> AI Assistant</button>
-      <button class="analytics-btn" type="button"><span class="icon">📈</span> Analytics View</button>
+      <button class="ai-btn" type="button"><span class="icon">ðŸª„</span> AI Assistant</button>
+      <button class="analytics-btn" type="button"><span class="icon">ðŸ“ˆ</span> Analytics View</button>
     </div>
   </header>
 
@@ -25,7 +25,7 @@
              if it's just a display input, we might need a different trigger, 
              but usually, these should all be selects or inputs that trigger updates -->
         <input type="text" [(ngModel)]="selectedYear" (ngModelChange)="updateFilters()" placeholder="Year">
-        <span class="calendar-icon">📅</span>
+        <span class="calendar-icon">ðŸ“…</span>
       </div>
 
       <div class="select-with-label">
@@ -114,109 +114,137 @@
   </nav>
 
   <!-- <div class="tab-sub-header">
-    <div class="view-by">View By <strong>Layout 01</strong> <span class="chevron">▼</span></div>
+    <div class="view-by">View By <strong>Layout 01</strong> <span class="chevron">â–¼</span></div>
   </div> -->
 
   <div class="tab-body">
-    <app-raw-material-database #rawTab *ngIf="activeTab === 'raw-material'" [filterYear]="appliedYear"
-      [filterLocation]="appliedLocation" [filterVendor]="appliedVendor" [filterCategory]="appliedCategory"
-      [filterKeyword]="appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
+    <app-raw-material-database #rawTab *ngIf="activeTab === 'raw-material'" [filterYear]="filterStates['raw-material'].appliedYear"
+      [filterLocation]="filterStates['raw-material'].appliedLocation" [filterVendor]="filterStates['raw-material'].appliedVendor" [filterCategory]="filterStates['raw-material'].appliedCategory"
+      [filterKeyword]="filterStates['raw-material'].appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
       [sortToken]="sortToken" [categories]="categoryOptions"></app-raw-material-database>
-    <app-location-specific-database #locationTab *ngIf="activeTab === 'location-specific'" [filterYear]="appliedYear"
-      [filterLocation]="appliedLocation" [filterVendor]="appliedVendor" [filterCategory]="appliedCategory"
-      [filterKeyword]="appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
+    <app-location-specific-database #locationTab *ngIf="activeTab === 'location-specific'" [filterYear]="filterStates['location-specific'].appliedYear"
+      [filterLocation]="filterStates['location-specific'].appliedLocation" [filterVendor]="filterStates['location-specific'].appliedVendor" [filterCategory]="filterStates['location-specific'].appliedCategory"
+      [filterKeyword]="filterStates['location-specific'].appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
       [sortToken]="sortToken" [categories]="categoryOptions"></app-location-specific-database>
-    <app-project-specific-database #projectTab *ngIf="activeTab === 'project-specific'" [filterYear]="appliedYear"
-      [filterLocation]="appliedLocation" [filterVendor]="appliedVendor" [filterCategory]="appliedCategory"
-      [filterKeyword]="appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
+    <app-project-specific-database #projectTab *ngIf="activeTab === 'project-specific'" [filterYear]="filterStates['project-specific'].appliedYear"
+      [filterLocation]="filterStates['project-specific'].appliedLocation" [filterVendor]="filterStates['project-specific'].appliedVendor" [filterCategory]="filterStates['project-specific'].appliedCategory"
+      [filterKeyword]="filterStates['project-specific'].appliedKeyword" [filterToken]="filterToken" [sortDirection]="sortDirection"
       [sortToken]="sortToken" [categories]="categoryOptions"></app-project-specific-database>
   </div>
 
-  <div class="filter-overlay" *ngIf="isFilterSidebarOpen" (click)="closeFilterSidebar()"></div>
-  <aside class="filter-sidebar" [class.open]="isFilterSidebarOpen">
-
-    <!-- Sidebar Header -->
-    <div class="sidebar-head">
+  <div class="sidebar-overlay" *ngIf="isFilterSidebarOpen" (click)="closeFilterSidebar()"></div>
+  <aside class="mapping-sidebar" [class.open]="isFilterSidebarOpen">
+    <div class="sidebar-header">
       <h3>Filter By</h3>
-      <button type="button" class="close-sidebar-btn" (click)="closeFilterSidebar()">✕</button>
+      <button type="button" class="close-sidebar-btn" (click)="closeFilterSidebar()">×</button>
     </div>
 
-    <!-- Sidebar Body -->
     <div class="sidebar-content">
-
-      <!-- Category Select -->
-      <div class="filter-field">
-        <label>Select via category</label>
-        <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" placeholder="Category Select"
-          width="100%"></app-autocomplete>
-      </div>
-
-      <!-- Sub-Category Select -->
-      <div class="filter-field">
-        <label>Select via sub - category</label>
-        <app-autocomplete [(ngModel)]="selectedSubCategory" [options]="subCategories" placeholder="Category Select"
-          width="100%"></app-autocomplete>
-      </div>
-
-      <!-- Item Name Select -->
-      <div class="filter-field">
-        <label>Select specific Item Name</label>
-        <app-autocomplete [(ngModel)]="selectedItemName" [options]="itemNames" placeholder="Item Name"
-          width="100%"></app-autocomplete>
-      </div>
-
-      <!-- UoM -->
-      <div class="filter-field">
-        <label>UoM</label>
-        <div class="uom-toggle">
-          <button type="button" [class.uom-active]="uomMode === 'set'" (click)="uomMode = 'set'">Set Type</button>
-          <button type="button" [class.uom-active]="uomMode === 'no'" (click)="uomMode = 'no'">No. Type</button>
-        </div>
-        <div class="uom-chips">
-          <button type="button" *ngFor="let uom of uomOptions" class="uom-chip"
-            [class.selected]="selectedUoms.includes(uom)" (click)="toggleUom(uom)">{{ uom }}</button>
-        </div>
-      </div>
-
-      <!-- Project Type -->
-      <div class="filter-field">
-        <label>Project Type</label>
-        <div class="radio-group-filter">
-          <label class="radio-option">
-            <input type="radio" name="projectType" [(ngModel)]="projectType" value="within" />
-            <span class="radio-dot"></span>
-            Within India
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="projectType" [(ngModel)]="projectType" value="outside" />
-            <span class="radio-dot"></span>
-            Outside India
-          </label>
-        </div>
-      </div>
-
-      <!-- Unit Rate Range -->
-      <div class="filter-field">
-        <label>Unit Rate Range ( in ₹)</label>
-        <div class="range-slider-wrap">
-          <input type="range" class="range-slider" [min]="1000" [max]="1000000" [step]="1000" [(ngModel)]="minRate" />
-          <div class="range-labels">
-            <span>₹{{ minRate | number }}</span>
-            <span>₹10,00,000</span>
+      <ng-container [ngSwitch]="activeTab">
+        <ng-container *ngSwitchCase="'raw-material'">
+          <div class="filter-field">
+            <label>Select via category</label>
+            <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" placeholder="Category Select" width="100%"></app-autocomplete>
           </div>
-        </div>
-      </div>
+          <div class="filter-field">
+            <label>Select specific Item Name</label>
+            <app-autocomplete [(ngModel)]="selectedItemName" [options]="itemNames" placeholder="Item Name" width="100%"></app-autocomplete>
+          </div>
+          <div class="filter-field">
+            <label>Search keyword</label>
+            <input type="text" [(ngModel)]="selectedKeyword" placeholder="Search..." />
+          </div>
+        </ng-container>
 
+        <ng-container *ngSwitchCase="'location-specific'">
+          <div class="filter-field">
+            <label>Select via category</label>
+            <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" placeholder="Category Select" width="100%"></app-autocomplete>
+          </div>
+          <div class="filter-field">
+            <label>Select via sub - category</label>
+            <app-autocomplete [(ngModel)]="selectedSubCategory" [options]="subCategories" placeholder="Sub Category" width="100%"></app-autocomplete>
+          </div>
+          <div class="filter-field">
+            <label>Select specific Item Name</label>
+            <app-autocomplete [(ngModel)]="selectedItemName" [options]="itemNames" placeholder="Item Name" width="100%"></app-autocomplete>
+          </div>
+          <div class="filter-field">
+            <label>UoM</label>
+            <div class="uom-toggle">
+              <button type="button" [class.uom-active]="uomMode === 'set'" (click)="uomMode = 'set'">Set Type</button>
+              <button type="button" [class.uom-active]="uomMode === 'no'" (click)="uomMode = 'no'">No. Type</button>
+            </div>
+            <div class="uom-chips">
+              <button type="button" *ngFor="let uom of uomOptions" class="uom-chip" [class.selected]="selectedUoms.includes(uom)" (click)="toggleUom(uom)">{{ uom }}</button>
+            </div>
+          </div>
+          <div class="filter-field">
+            <label>Project Type</label>
+            <div class="radio-group-filter">
+              <label class="radio-option">
+                <input type="radio" name="projectTypeLocation" [(ngModel)]="projectType" value="within" />
+                <span class="radio-dot"></span>
+                Within India
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="projectTypeLocation" [(ngModel)]="projectType" value="outside" />
+                <span class="radio-dot"></span>
+                Outside India
+              </label>
+            </div>
+          </div>
+          <div class="filter-field">
+            <label>Unit Rate Range (in ?)</label>
+            <div class="range-slider-wrap">
+              <input type="range" class="range-slider" [min]="1000" [max]="1000000" [step]="1000" [(ngModel)]="minRate" />
+              <div class="range-labels">
+                <span>?{{ minRate | number }}</span>
+                <span>?10,00,000</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'project-specific'">
+          <div class="filter-field">
+            <label>Select via category</label>
+            <app-autocomplete [(ngModel)]="selectedCategory" [options]="categoryOptions" placeholder="Category Select" width="100%"></app-autocomplete>
+          </div>
+          <div class="filter-field">
+            <label>Select via sub - category</label>
+            <app-autocomplete [(ngModel)]="selectedSubCategory" [options]="subCategories" placeholder="Sub Category" width="100%"></app-autocomplete>
+          </div>
+          <div class="filter-field">
+            <label>Search keyword</label>
+            <input type="text" [(ngModel)]="selectedKeyword" placeholder="Search by item / project / moc" />
+          </div>
+          <div class="filter-field">
+            <label>Project Type</label>
+            <div class="radio-group-filter">
+              <label class="radio-option">
+                <input type="radio" name="projectTypeProject" [(ngModel)]="projectType" value="within" />
+                <span class="radio-dot"></span>
+                Within India
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="projectTypeProject" [(ngModel)]="projectType" value="outside" />
+                <span class="radio-dot"></span>
+                Outside India
+              </label>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
     </div>
 
-    <!-- Sidebar Footer -->
     <div class="sidebar-footer">
       <button type="button" class="apply-btn" (click)="applyFilters()">Apply Now</button>
       <button type="button" class="reset-btn" (click)="clearSidebarFilters()">Reset</button>
     </div>
-
   </aside>
 
   <app-import-modal *ngIf="showImportModal" (close)="closeImportModal()"
     (upload)="handleImport($event)"></app-import-modal>
 </section>
+

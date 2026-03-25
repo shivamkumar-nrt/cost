@@ -257,30 +257,31 @@
 }
 
 /* ─── FILTER SIDEBAR & OVERLAY ────────────────────────────────────────── */
-.filter-overlay {
+.sidebar-overlay {
+  top: 0;
+  left: 0;
   position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  z-index: 100;
-  backdrop-filter: blur(2px);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
 }
 
-.filter-sidebar {
+.mapping-sidebar {
   position: fixed;
   top: 0;
-  right: -420px;
-  width: 360px;
-  max-width: 92vw;
+  right: -400px;
+  width: min(360px, 100vw);
   height: 100vh;
-  background: #fff;
-  z-index: 101;
-  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.15);
+  background-color: #F8FAFC;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  transition: right 0.3s ease;
+  z-index: 1001;
 }
 
-.filter-sidebar.open {
+.mapping-sidebar.open {
   right: 0;
 }
 
@@ -369,39 +370,34 @@
 }
 
 /* ─── Sidebar Header — gradient blue ─── */
-.sidebar-head {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-  padding: 18px 20px;
+.sidebar-header {
+  background-color: #2563EB;
+  color: white;
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.sidebar-head h3 {
+.sidebar-header h3 {
   margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.2px;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .close-sidebar-btn {
-  width: 28px;
-  height: 28px;
+  background: transparent;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-radius: 50%;
+  color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  transition: background 0.2s;
+  padding: 4px;
 }
 
 .close-sidebar-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
+  opacity: 0.85;
 }
 
 /* ─── Filter Fields (new style) ─── */
@@ -771,7 +767,7 @@
     font-size: 11px;
   }
 
-  .sidebar-head {
+  .sidebar-header {
     padding: 16px;
   }
 

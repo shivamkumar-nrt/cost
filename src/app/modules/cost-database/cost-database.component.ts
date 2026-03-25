@@ -16,6 +16,26 @@ interface Category {
   name: string;
 }
 
+interface TabFilterState {
+  selectedYear: string;
+  selectedLocation: string;
+  selectedVendor: string;
+  selectedCategory: string;
+  selectedSubCategory: string;
+  selectedItemName: string;
+  selectedKeyword: string;
+  uomMode: 'set' | 'no';
+  selectedUoms: string[];
+  projectType: 'within' | 'outside';
+  minRate: number;
+  maxRate: number;
+  appliedYear: string;
+  appliedLocation: string;
+  appliedVendor: string;
+  appliedCategory: string;
+  appliedKeyword: string;
+}
+
 @Component({
   selector: 'app-cost-database',
   standalone: true,
@@ -39,32 +59,18 @@ export class CostDatabaseComponent {
   readonly locations = ['All', 'BLR', 'MUM', 'DEL'];
   readonly vendors = ['All', 'Blue Star Limited (R 3)', 'ABC Vendor Pvt Ltd', 'Project Sunrise'];
 
-  selectedYear = 'All';
-  selectedLocation = 'All';
-  selectedVendor = 'All';
-  selectedCategory = 'All';
-  selectedSubCategory = '';
-  selectedItemName = '';
-  selectedKeyword = '';
-  uomMode: 'set' | 'no' = 'set';
-  selectedUoms: string[] = [];
-  projectType: 'within' | 'outside' = 'within';
-  minRate = 1000;
-  maxRate = 1000000;
-
-  appliedYear = '';
-  appliedLocation = '';
-  appliedVendor = '';
-  appliedCategory = '';
-  appliedKeyword = '';
-  appliedMinRate = 1000;
-  appliedMaxRate = 1000000;
   activeTab: TabKey = 'location-specific';
   sortDirection: SortDirection = 'asc';
   filterToken = 0;
   sortToken = 0;
   isFilterSidebarOpen = false;
   showImportModal = false;
+
+  filterStates: Record<TabKey, TabFilterState> = {
+    'raw-material': this.createDefaultFilterState(),
+    'location-specific': this.createDefaultFilterState(),
+    'project-specific': this.createDefaultFilterState()
+  };
 
   readonly subCategories = ['All', 'Sub Cat 1', 'Sub Cat 2', 'Sub Cat 3'];
   readonly itemNames = ['All', 'Item A', 'Item B', 'Item C'];
@@ -85,6 +91,90 @@ export class CostDatabaseComponent {
 
   constructor(private costLocationService: CostLocationService) {}
 
+  get selectedYear(): string {
+    return this.filterStates[this.activeTab].selectedYear;
+  }
+  set selectedYear(value: string) {
+    this.filterStates[this.activeTab].selectedYear = value;
+  }
+
+  get selectedLocation(): string {
+    return this.filterStates[this.activeTab].selectedLocation;
+  }
+  set selectedLocation(value: string) {
+    this.filterStates[this.activeTab].selectedLocation = value;
+  }
+
+  get selectedVendor(): string {
+    return this.filterStates[this.activeTab].selectedVendor;
+  }
+  set selectedVendor(value: string) {
+    this.filterStates[this.activeTab].selectedVendor = value;
+  }
+
+  get selectedCategory(): string {
+    return this.filterStates[this.activeTab].selectedCategory;
+  }
+  set selectedCategory(value: string) {
+    this.filterStates[this.activeTab].selectedCategory = value;
+  }
+
+  get selectedSubCategory(): string {
+    return this.filterStates[this.activeTab].selectedSubCategory;
+  }
+  set selectedSubCategory(value: string) {
+    this.filterStates[this.activeTab].selectedSubCategory = value;
+  }
+
+  get selectedItemName(): string {
+    return this.filterStates[this.activeTab].selectedItemName;
+  }
+  set selectedItemName(value: string) {
+    this.filterStates[this.activeTab].selectedItemName = value;
+  }
+
+  get selectedKeyword(): string {
+    return this.filterStates[this.activeTab].selectedKeyword;
+  }
+  set selectedKeyword(value: string) {
+    this.filterStates[this.activeTab].selectedKeyword = value;
+  }
+
+  get uomMode(): 'set' | 'no' {
+    return this.filterStates[this.activeTab].uomMode;
+  }
+  set uomMode(value: 'set' | 'no') {
+    this.filterStates[this.activeTab].uomMode = value;
+  }
+
+  get selectedUoms(): string[] {
+    return this.filterStates[this.activeTab].selectedUoms;
+  }
+  set selectedUoms(value: string[]) {
+    this.filterStates[this.activeTab].selectedUoms = value;
+  }
+
+  get projectType(): 'within' | 'outside' {
+    return this.filterStates[this.activeTab].projectType;
+  }
+  set projectType(value: 'within' | 'outside') {
+    this.filterStates[this.activeTab].projectType = value;
+  }
+
+  get minRate(): number {
+    return this.filterStates[this.activeTab].minRate;
+  }
+  set minRate(value: number) {
+    this.filterStates[this.activeTab].minRate = value;
+  }
+
+  get maxRate(): number {
+    return this.filterStates[this.activeTab].maxRate;
+  }
+  set maxRate(value: number) {
+    this.filterStates[this.activeTab].maxRate = value;
+  }
+
   get activeTabLabel(): string {
     if (this.activeTab === 'raw-material') {
       return 'Raw Material Database';
@@ -100,11 +190,12 @@ export class CostDatabaseComponent {
   }
 
   updateFilters(): void {
-    this.appliedYear = this.selectedYear === 'All' ? '' : this.selectedYear;
-    this.appliedLocation = this.selectedLocation === 'All' ? '' : this.selectedLocation;
-    this.appliedVendor = this.selectedVendor === 'All' ? '' : this.selectedVendor;
-    this.appliedCategory = this.selectedCategory === 'All' ? '' : this.selectedCategory;
-    this.appliedKeyword = this.selectedKeyword.trim();
+    const state = this.filterStates[this.activeTab];
+    state.appliedYear = state.selectedYear === 'All' ? '' : state.selectedYear;
+    state.appliedLocation = state.selectedLocation === 'All' ? '' : state.selectedLocation;
+    state.appliedVendor = state.selectedVendor === 'All' ? '' : state.selectedVendor;
+    state.appliedCategory = state.selectedCategory === 'All' ? '' : state.selectedCategory;
+    state.appliedKeyword = state.selectedKeyword.trim();
     this.filterToken += 1;
     this.rawTab?.applyFilterSort();
     this.locationTab?.applyFilterSort();
@@ -178,17 +269,19 @@ export class CostDatabaseComponent {
   }
 
   clearSidebarFilters(): void {
-    this.selectedYear = 'All';
-    this.selectedLocation = 'All';
-    this.selectedVendor = 'All';
-    this.selectedCategory = '';
-    this.selectedSubCategory = '';
-    this.selectedItemName = '';
-    this.selectedKeyword = '';
-    this.selectedUoms = [];
-    this.uomMode = 'set';
-    this.projectType = 'within';
-    this.minRate = 1000;
+    const state = this.filterStates[this.activeTab];
+    state.selectedYear = 'All';
+    state.selectedLocation = 'All';
+    state.selectedVendor = 'All';
+    state.selectedCategory = '';
+    state.selectedSubCategory = '';
+    state.selectedItemName = '';
+    state.selectedKeyword = '';
+    state.selectedUoms = [];
+    state.uomMode = 'set';
+    state.projectType = 'within';
+    state.minRate = 1000;
+    state.maxRate = 1000000;
   }
 
   toggleUom(uom: string): void {
@@ -198,6 +291,28 @@ export class CostDatabaseComponent {
     } else {
       this.selectedUoms = this.selectedUoms.filter(u => u !== uom);
     }
+  }
+
+  private createDefaultFilterState(): TabFilterState {
+    return {
+      selectedYear: 'All',
+      selectedLocation: 'All',
+      selectedVendor: 'All',
+      selectedCategory: 'All',
+      selectedSubCategory: '',
+      selectedItemName: '',
+      selectedKeyword: '',
+      uomMode: 'set',
+      selectedUoms: [],
+      projectType: 'within',
+      minRate: 1000,
+      maxRate: 1000000,
+      appliedYear: '',
+      appliedLocation: '',
+      appliedVendor: '',
+      appliedCategory: '',
+      appliedKeyword: ''
+    };
   }
 
   deleteSelectedRows(): void {
