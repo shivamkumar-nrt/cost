@@ -14,7 +14,16 @@
     />
     <span class="chevron" (click)="toggleDropdown()">▼</span>
     
-    <div class="dropdown-list" *ngIf="isOpen" [style.max-height]="height">
+    <div
+      #dropdownList
+      class="dropdown-list"
+      *ngIf="isOpen"
+      [style.max-height]="height"
+      [style.--dd-top]="dropdownTop"
+      [style.--dd-left]="dropdownLeft"
+      [style.--dd-width]="dropdownWidth"
+      style="top: var(--dd-top); left: var(--dd-left); width: var(--dd-width);"
+    >
       <div 
         *ngFor="let option of filteredOptions" 
         (click)="selectOption(option)"

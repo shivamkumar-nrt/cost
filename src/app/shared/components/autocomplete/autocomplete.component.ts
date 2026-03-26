@@ -1,4 +1,4 @@
-import { Component, Input, forwardRef, ElementRef, HostListener, ViewChild, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, forwardRef, ElementRef, HostListener, ViewChild, OnInit, OnChanges, OnDestroy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { CommonModule } from '@angular/common';
@@ -18,7 +18,7 @@ import { FormsModule } from '@angular/forms';
     }
   ]
 })
-export class AutocompleteComponent implements ControlValueAccessor, OnInit, OnChanges {
+export class AutocompleteComponent implements ControlValueAccessor, OnInit, OnChanges, OnDestroy {
   @Input() label = '';
   @Input() placeholder = 'Select an option';
   @Input() options: any[] = [];
@@ -30,11 +30,17 @@ export class AutocompleteComponent implements ControlValueAccessor, OnInit, OnCh
   @Input() disabled = false;
 
   @ViewChild('inputField') inputField?: ElementRef;
+  @ViewChild('dropdownList') dropdownList?: ElementRef;
 
   value: any = '';
   searchQuery = '';
   isOpen = false;
   filteredOptions: any[] = [];
+  public dropdownTop = '0px';
+  public dropdownLeft = '0px';
+  public dropdownWidth = '0px';
+  private scrollParent?: HTMLElement | null;
+  private readonly onScrollBound = () => this.updateDropdownPosition();
 
   onChange: any = () => {};
   onTouched: any = () => {};
@@ -52,6 +58,10 @@ export class AutocompleteComponent implements ControlValueAccessor, OnInit, OnCh
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       this.filterOptions();
+      this.bindScroll();
+      this.updateDropdownPosition();
+    } else {
+      this.unbindScroll();
     }
   }
 
@@ -67,6 +77,7 @@ export class AutocompleteComponent implements ControlValueAccessor, OnInit, OnCh
     this.value = this.getOptionValue(option);
     this.searchQuery = this.getOptionDisplay(option);
     this.isOpen = false;
+    this.unbindScroll();
     this.onChange(this.value);
     this.onTouched();
   }
@@ -107,13 +118,56 @@ export class AutocompleteComponent implements ControlValueAccessor, OnInit, OnCh
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
-    if (!this.inputField?.nativeElement.contains(event.target)) {
+    const target = event.target as Node;
+    const inputContains = this.inputField?.nativeElement.contains(target);
+    const dropdownContains = this.dropdownList?.nativeElement.contains(target);
+    if (!inputContains && !dropdownContains) {
       this.isOpen = false;
+      this.unbindScroll();
     }
   }
 
   onInputFocus() {
     this.isOpen = true;
+    this.bindScroll();
+    this.updateDropdownPosition();
     this.onTouched();
   }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    if (this.isOpen) {
+      this.updateDropdownPosition();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.unbindScroll();
+  }
+
+  private updateDropdownPosition(): void {
+    const inputEl = this.inputField?.nativeElement as HTMLElement | undefined;
+    if (!inputEl) return;
+    const rect = inputEl.getBoundingClientRect();
+    this.dropdownTop = `${rect.bottom + 4}px`;
+    this.dropdownLeft = `${rect.left}px`;
+    this.dropdownWidth = `${rect.width}px`;
+  }
+
+  private bindScroll(): void {
+    if (this.scrollParent) return;
+    const inputEl = this.inputField?.nativeElement as HTMLElement | undefined;
+    this.scrollParent = inputEl?.closest('.table-scroll');
+    if (this.scrollParent) {
+      this.scrollParent.addEventListener('scroll', this.onScrollBound, { passive: true });
+    }
+  }
+
+  private unbindScroll(): void {
+    if (this.scrollParent) {
+      this.scrollParent.removeEventListener('scroll', this.onScrollBound);
+      this.scrollParent = null;
+    }
+  }
+
 }

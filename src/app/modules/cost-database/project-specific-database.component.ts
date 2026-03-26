@@ -8,6 +8,8 @@ import {
   ProjectDbService
 } from '../../core/services/project-db.service';
 import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
+import { MultiYearSelectorComponent } from '../../shared/components/multi-year-selector/multi-year-selector.component';
+import { CatalogService, HierarchyCategory, HierarchySubCategory, HierarchyType } from '../../core/services/catalog.service';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -40,7 +42,7 @@ interface ProjectRow {
 @Component({
   selector: 'app-project-specific-database',
   standalone: true,
-  imports: [CommonModule, FormsModule, AutocompleteComponent],
+  imports: [CommonModule, FormsModule, AutocompleteComponent, MultiYearSelectorComponent],
   templateUrl: './project-specific-database.component.html',
   styleUrl: './project-specific-database.component.css'
 })
@@ -50,10 +52,21 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   @Input() filterVendor = '';
   @Input() filterCategory = '';
   @Input() filterKeyword = '';
+  @Input() filterSector = '';
+  @Input() filterProject = '';
+  @Input() filterMoc = '';
+  @Input() filterUnit = '';
+  @Input() filterItemDescriptionLike = '';
   @Input() filterToken = 0;
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
+  @Input() subCategories: string[] = [];
+  @Input() itemNames: string[] = [];
+  @Input() typeOptions: string[] = [];
+  @Input() itemOptions: string[] = [];
+
+  catalog: HierarchyCategory[] = [];
 
   sortKey = 'blueStarTotalRate';
   showInputRow = false;
@@ -65,9 +78,13 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   readonly pageSize = 10;
   currentPage = 1;
 
-  constructor(private projectDbService: ProjectDbService) {}
+  constructor(
+    private projectDbService: ProjectDbService,
+    private catalogService: CatalogService
+  ) {}
 
   ngOnInit(): void {
+    this.loadCatalog();
     this.loadRows();
   }
 
@@ -105,9 +122,21 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     return this.pagedRows.some(r => r.selected) && !this.allSelected;
   }
 
+  get hasAnySelection(): boolean {
+    return this.allRows.some(row => row.selected);
+  }
+
   toggleSelectAll(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.pagedRows.forEach(r => (r.selected = checked));
+    if (!checked) {
+      this.pagedRows.forEach(r => (r.selected = false));
+      return;
+    }
+    let first = true;
+    this.pagedRows.forEach(r => {
+      r.selected = first;
+      first = false;
+    });
   }
 
   applyFilterSort(): void {
@@ -183,6 +212,22 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
         row.isEditing = true;
       }
     });
+  }
+
+  onRowSelect(row: ProjectRow): void {
+    if (row.selected) {
+      this.allRows.forEach(r => {
+        if (r !== row) r.selected = false;
+      });
+      return;
+    }
+    this.allRows.forEach(r => {
+      if (r !== row) r.selected = false;
+    });
+  }
+
+  isRowSelectable(row: ProjectRow): boolean {
+    return !this.hasAnySelection || row.selected;
   }
 
   saveActive(): void {
@@ -268,6 +313,43 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     if (this.currentPage < this.totalPages) {
       this.currentPage += 1;
     }
+  }
+
+  hasSelectedRows(): boolean {
+    return this.allRows.some(row => row.selected);
+  }
+
+  onCategoryChange(row: ProjectRow): void {
+    row.subPackage = '';
+    row.type = '';
+    row.item = '';
+  }
+
+  onSubCategoryChange(row: ProjectRow): void {
+    row.type = '';
+    row.item = '';
+  }
+
+  onTypeChange(row: ProjectRow): void {
+    row.item = '';
+  }
+
+  getSubCategoryOptionsFor(categoryName: string): string[] {
+    const category = this.getCategoryByName(categoryName);
+    const names = category?.subCategories?.map(sub => sub.name) ?? this.getAllSubCategoryNames();
+    return this.withAll(names, this.subCategories.includes('All'));
+  }
+
+  getTypeOptionsFor(subCategoryName: string): string[] {
+    const subCategory = this.getSubCategoryByName(subCategoryName);
+    const names = subCategory?.itemTypes?.map(type => type.name) ?? this.getAllTypeNames();
+    return this.withAll(names, this.typeOptions.includes('All'));
+  }
+
+  getItemOptionsFor(typeName: string): string[] {
+    const type = this.getTypeByName(typeName);
+    const names = type?.items?.map(item => item.name) ?? this.getAllItemNames();
+    return this.withAll(names, this.itemOptions.includes('All'));
   }
 
   private loadRows(): void {
@@ -394,17 +476,14 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   private refreshRows(): void {
     const filtered = this.allRows.filter((row) => {
       const yearOk = !this.filterYear || row.year === this.filterYear;
-      const locationOk = !this.filterLocation || row.projectLocation === this.filterLocation;
-      const vendorOk = !this.filterVendor || this.filterVendor === 'Blue Star Limited (R 3)';
+      const sectorOk = !this.filterSector || row.sector === this.filterSector;
+      const projectOk = !this.filterProject || row.project === this.filterProject || row.projectLocation === this.filterProject;
+      const mocOk = !this.filterMoc || row.moc === this.filterMoc;
+      const unitOk = !this.filterUnit || row.uom === this.filterUnit;
       const categoryOk = !this.filterCategory || row.category === this.filterCategory;
-      const search = this.filterKeyword.toLowerCase();
-      const keywordOk =
-        !search ||
-        row.item.toLowerCase().includes(search) ||
-        row.project.toLowerCase().includes(search) ||
-        row.projectLocation.toLowerCase().includes(search) ||
-        row.moc.toLowerCase().includes(search);
-      return yearOk && locationOk && vendorOk && categoryOk && keywordOk;
+      const search = this.filterItemDescriptionLike.toLowerCase();
+      const itemDescOk = !search || row.item.toLowerCase().includes(search);
+      return yearOk && sectorOk && projectOk && categoryOk && mocOk && unitOk && itemDescOk;
     });
 
     this.rows = [...filtered].sort((a, b) => {
@@ -451,5 +530,102 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
       rate: null,
       isEditing: false
     };
+  }
+
+  private loadCatalog(): void {
+    this.catalogService.getHierarchy().subscribe({
+      next: (res) => {
+        this.catalog = res?.payload || [];
+      },
+      error: () => {
+        this.catalog = [];
+      }
+    });
+  }
+
+  private normalize(value: string): string {
+    return (value || '').trim();
+  }
+
+  private getCategoryByName(name: string): HierarchyCategory | undefined {
+    const clean = this.normalize(name);
+    if (!clean || clean === 'All') {
+      return undefined;
+    }
+    return this.catalog.find(cat => cat.name === clean);
+  }
+
+  private getSubCategoryByName(name: string): HierarchySubCategory | undefined {
+    const clean = this.normalize(name);
+    if (!clean || clean === 'All') {
+      return undefined;
+    }
+    for (const category of this.catalog) {
+      const sub = (category.subCategories || []).find(entry => entry.name === clean);
+      if (sub) {
+        return sub;
+      }
+    }
+    return undefined;
+  }
+
+  private getTypeByName(name: string): HierarchyType | undefined {
+    const clean = this.normalize(name);
+    if (!clean || clean === 'All') {
+      return undefined;
+    }
+    for (const category of this.catalog) {
+      for (const sub of category.subCategories || []) {
+        const type = (sub.itemTypes || []).find(entry => entry.name === clean);
+        if (type) {
+          return type;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private getAllSubCategoryNames(): string[] {
+    const names = new Set<string>();
+    this.catalog.forEach(category => {
+      (category.subCategories || []).forEach(sub => names.add(sub.name));
+    });
+    if (names.size === 0) {
+      return this.subCategories.filter(name => name !== 'All');
+    }
+    return Array.from(names);
+  }
+
+  private getAllTypeNames(): string[] {
+    const names = new Set<string>();
+    this.catalog.forEach(category => {
+      (category.subCategories || []).forEach(sub => {
+        (sub.itemTypes || []).forEach(type => names.add(type.name));
+      });
+    });
+    if (names.size === 0) {
+      return this.typeOptions.filter(name => name !== 'All');
+    }
+    return Array.from(names);
+  }
+
+  private getAllItemNames(): string[] {
+    const names = new Set<string>();
+    this.catalog.forEach(category => {
+      (category.subCategories || []).forEach(sub => {
+        (sub.itemTypes || []).forEach(type => {
+          (type.items || []).forEach(item => names.add(item.name));
+        });
+      });
+    });
+    if (names.size === 0) {
+      return this.itemOptions.filter(name => name !== 'All');
+    }
+    return Array.from(names);
+  }
+
+  private withAll(options: string[], includeAll: boolean): string[] {
+    const unique = Array.from(new Set(options.filter(name => !!name && name !== 'All')));
+    return includeAll ? ['All', ...unique] : unique;
   }
 }

@@ -1,85 +1,95 @@
 <div class="table-wrap">
-  <table>
+  <div class="table-scroll">
+    <table>
     <thead>
       <tr>
         <th class="selector">
           <input type="checkbox" [checked]="allSelected" [indeterminate]="someSelected" (change)="toggleSelectAll($event)" title="Select All" />
         </th>
-        <th (click)="onSort('year')" class="sortable">
-          Year
-          <span class="sort-indicator" *ngIf="sortKey === 'year'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('location')" class="sortable">
-          Location
-          <span class="sort-indicator" *ngIf="sortKey === 'location'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('sector')" class="sortable">
-          Sector
-          <span class="sort-indicator" *ngIf="sortKey === 'sector'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('category')" class="sortable">
-          Category
-          <span class="sort-indicator" *ngIf="sortKey === 'category'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('item')" class="sortable">
-          Short Item Specification
-          <span class="sort-indicator" *ngIf="sortKey === 'item'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('vendor')" class="sortable">
-          Vendor Name
-          <span class="sort-indicator" *ngIf="sortKey === 'vendor'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('moc')" class="sortable">
-          MoC
-          <span class="sort-indicator" *ngIf="sortKey === 'moc'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('uom')" class="sortable">
-          UoM
-          <span class="sort-indicator" *ngIf="sortKey === 'uom'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
-        <th (click)="onSort('rate')" class="sortable rate-col">
-          Total Rate
-          <span class="sort-indicator" *ngIf="sortKey === 'rate'">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
-        </th>
+        <th (click)="onSort('year')" class="sortable">Year <span class="sort-indicator" *ngIf="sortKey === 'year'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('sector')" class="sortable">Sector <span class="sort-indicator" *ngIf="sortKey === 'sector'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('projectLocation')" class="sortable">Project Location <span class="sort-indicator" *ngIf="sortKey === 'projectLocation'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('type')" class="sortable">Type <span class="sort-indicator" *ngIf="sortKey === 'type'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('category')" class="sortable">Category <span class="sort-indicator" *ngIf="sortKey === 'category'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('subCategory')" class="sortable">Sub Category <span class="sort-indicator" *ngIf="sortKey === 'subCategory'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('moc')" class="sortable">MoC <span class="sort-indicator" *ngIf="sortKey === 'moc'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('item')" class="sortable">Item <span class="sort-indicator" *ngIf="sortKey === 'item'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('itemDescription')" class="sortable">Item Description <span class="sort-indicator" *ngIf="sortKey === 'itemDescription'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('unit')" class="sortable">Unit <span class="sort-indicator" *ngIf="sortKey === 'unit'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('blueStarInstallationRate')" class="sortable">Blue Star Inst. Rate <span class="sort-indicator" *ngIf="sortKey === 'blueStarInstallationRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('blueStarTotalRate')" class="sortable">Blue Star Total Rate <span class="sort-indicator" *ngIf="sortKey === 'blueStarTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('micronTotalRate')" class="sortable">Micron Total Rate <span class="sort-indicator" *ngIf="sortKey === 'micronTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('rppTotalRate')" class="sortable">RPP Total Rate <span class="sort-indicator" *ngIf="sortKey === 'rppTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('listenlightsTotalRate')" class="sortable">Listenlights Total Rate <span class="sort-indicator" *ngIf="sortKey === 'listenlightsTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('jbTotalRate')" class="sortable">JB Total Rate <span class="sort-indicator" *ngIf="sortKey === 'jbTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('pmcTotalRate')" class="sortable">PMC Total Rate <span class="sort-indicator" *ngIf="sortKey === 'pmcTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
+        <th (click)="onSort('gleedsTotalRate')" class="sortable">Gleeds Total Rate <span class="sort-indicator" *ngIf="sortKey === 'gleedsTotalRate'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
       </tr>
     </thead>
     <tbody>
       <tr class="input-row" *ngIf="showInputRow">
         <td class="selector"></td>
-        <td><input type="text" [(ngModel)]="inputRow.year" /></td>
-        <td><input type="text" [(ngModel)]="inputRow.location" /></td>
+        <td><app-multi-year-selector [(ngModel)]="inputRow.year"></app-multi-year-selector></td>
         <td><input type="text" [(ngModel)]="inputRow.sector" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.projectLocation" /></td>
+        <td>
+          <app-autocomplete
+            [(ngModel)]="inputRow.type"
+            [options]="getTypeOptions(inputRow.category, inputRow.subCategory)"
+            placeholder="Select Type"
+            width="140px"
+            (ngModelChange)="onTypeChange(inputRow)"
+          ></app-autocomplete>
+        </td>
         <td>
           <app-autocomplete
             [(ngModel)]="inputRow.category"
-            [options]="categories"
+            [options]="getCategoryOptions()"
             placeholder="Select Category"
             width="140px"
+            (ngModelChange)="onCategoryChange(inputRow)"
           ></app-autocomplete>
         </td>
-        <td><input type="text" [(ngModel)]="inputRow.item" /></td>
-        <td><input type="text" [(ngModel)]="inputRow.vendor" /></td>
+        <td>
+          <app-autocomplete
+            [(ngModel)]="inputRow.subCategory"
+            [options]="getSubCategoryOptions(inputRow.category)"
+            placeholder="Select Sub Category"
+            width="140px"
+            (ngModelChange)="onSubCategoryChange(inputRow)"
+          ></app-autocomplete>
+        </td>
         <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
-        <td><input type="text" [(ngModel)]="inputRow.uom" /></td>
-        <td><input type="number" [(ngModel)]="inputRow.rate" /></td>
+        <td>
+          <app-autocomplete
+            [(ngModel)]="inputRow.item"
+            [options]="getItemOptions(inputRow.category, inputRow.subCategory, inputRow.type)"
+            placeholder="Select Item"
+            width="180px"
+            (ngModelChange)="onItemChange(inputRow)"
+          ></app-autocomplete>
+        </td>
+        <td><input type="text" [(ngModel)]="inputRow.itemDescription" /></td>
+        <td><input type="text" [(ngModel)]="inputRow.unit" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.blueStarInstallationRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.blueStarTotalRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.micronTotalRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.rppTotalRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.listenlightsTotalRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.jbTotalRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.pmcTotalRate" /></td>
+        <td><input type="number" [(ngModel)]="inputRow.gleedsTotalRate" /></td>
       </tr>
-
 
       <tr *ngFor="let row of pagedRows" [class.selected]="row.selected">
         <td class="selector">
-          <input type="checkbox" [(ngModel)]="row.selected" />
+          <input type="checkbox" [(ngModel)]="row.selected" (change)="onRowSelect(row)" />
         </td>
         <td>
           <ng-container *ngIf="row.isEditing; else rawYearText">
-            <input type="text" [(ngModel)]="row.year" />
+            <app-multi-year-selector [(ngModel)]="row.year"></app-multi-year-selector>
           </ng-container>
           <ng-template #rawYearText>{{ row.year }}</ng-template>
-        </td>
-        <td>
-          <ng-container *ngIf="row.isEditing; else rawLocationText">
-            <input type="text" [(ngModel)]="row.location" />
-          </ng-container>
-          <ng-template #rawLocationText>{{ row.location }}</ng-template>
         </td>
         <td>
           <ng-container *ngIf="row.isEditing; else rawSectorText">
@@ -88,26 +98,46 @@
           <ng-template #rawSectorText>{{ row.sector }}</ng-template>
         </td>
         <td>
+          <ng-container *ngIf="row.isEditing; else rawLocationText">
+            <input type="text" [(ngModel)]="row.projectLocation" />
+          </ng-container>
+          <ng-template #rawLocationText>{{ row.projectLocation }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawTypeText">
+            <app-autocomplete
+              [(ngModel)]="row.type"
+              [options]="getTypeOptions(row.category, row.subCategory)"
+              placeholder="Select Type"
+              width="140px"
+              (ngModelChange)="onTypeChange(row)"
+            ></app-autocomplete>
+          </ng-container>
+          <ng-template #rawTypeText>{{ row.type }}</ng-template>
+        </td>
+        <td>
           <ng-container *ngIf="row.isEditing; else rawCategoryText">
             <app-autocomplete
               [(ngModel)]="row.category"
-              [options]="categories"
+              [options]="getCategoryOptions()"
+              placeholder="Select Category"
               width="140px"
+              (ngModelChange)="onCategoryChange(row)"
             ></app-autocomplete>
           </ng-container>
           <ng-template #rawCategoryText>{{ row.category }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.isEditing; else rawItemText">
-            <input type="text" [(ngModel)]="row.item" />
+          <ng-container *ngIf="row.isEditing; else rawSubCategoryText">
+            <app-autocomplete
+              [(ngModel)]="row.subCategory"
+              [options]="getSubCategoryOptions(row.category)"
+              placeholder="Select Sub Category"
+              width="140px"
+              (ngModelChange)="onSubCategoryChange(row)"
+            ></app-autocomplete>
           </ng-container>
-          <ng-template #rawItemText>{{ row.item }}</ng-template>
-        </td>
-        <td>
-          <ng-container *ngIf="row.isEditing; else rawVendorText">
-            <input type="text" [(ngModel)]="row.vendor" />
-          </ng-container>
-          <ng-template #rawVendorText>{{ row.vendor }}</ng-template>
+          <ng-template #rawSubCategoryText>{{ row.subCategory }}</ng-template>
         </td>
         <td>
           <ng-container *ngIf="row.isEditing; else rawMocText">
@@ -116,20 +146,81 @@
           <ng-template #rawMocText>{{ row.moc }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.isEditing; else rawUomText">
-            <input type="text" [(ngModel)]="row.uom" />
+          <ng-container *ngIf="row.isEditing; else rawItemText">
+            <app-autocomplete
+              [(ngModel)]="row.item"
+              [options]="getItemOptions(row.category, row.subCategory, row.type)"
+              placeholder="Select Item"
+              width="180px"
+              (ngModelChange)="onItemChange(row)"
+            ></app-autocomplete>
           </ng-container>
-          <ng-template #rawUomText>{{ row.uom }}</ng-template>
+          <ng-template #rawItemText>{{ row.item }}</ng-template>
         </td>
         <td>
-          <ng-container *ngIf="row.isEditing; else rawRateText">
-            <input type="number" [(ngModel)]="row.rate" />
+          <ng-container *ngIf="row.isEditing; else rawItemDescriptionText">
+            <input type="text" [(ngModel)]="row.itemDescription" />
           </ng-container>
-          <ng-template #rawRateText>{{ row.rate | number: '1.2-2' }}</ng-template>
+          <ng-template #rawItemDescriptionText>{{ row.itemDescription }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawUnitText">
+            <input type="text" [(ngModel)]="row.unit" />
+          </ng-container>
+          <ng-template #rawUnitText>{{ row.unit }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawBlueStarInstallationRateText">
+            <input type="number" [(ngModel)]="row.blueStarInstallationRate" />
+          </ng-container>
+          <ng-template #rawBlueStarInstallationRateText>{{ row.blueStarInstallationRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawBlueStarTotalRateText">
+            <input type="number" [(ngModel)]="row.blueStarTotalRate" />
+          </ng-container>
+          <ng-template #rawBlueStarTotalRateText>{{ row.blueStarTotalRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawMicronTotalRateText">
+            <input type="number" [(ngModel)]="row.micronTotalRate" />
+          </ng-container>
+          <ng-template #rawMicronTotalRateText>{{ row.micronTotalRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawRppTotalRateText">
+            <input type="number" [(ngModel)]="row.rppTotalRate" />
+          </ng-container>
+          <ng-template #rawRppTotalRateText>{{ row.rppTotalRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawListenlightsTotalRateText">
+            <input type="number" [(ngModel)]="row.listenlightsTotalRate" />
+          </ng-container>
+          <ng-template #rawListenlightsTotalRateText>{{ row.listenlightsTotalRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawJbTotalRateText">
+            <input type="number" [(ngModel)]="row.jbTotalRate" />
+          </ng-container>
+          <ng-template #rawJbTotalRateText>{{ row.jbTotalRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawPmcTotalRateText">
+            <input type="number" [(ngModel)]="row.pmcTotalRate" />
+          </ng-container>
+          <ng-template #rawPmcTotalRateText>{{ row.pmcTotalRate | number: '1.2-2' }}</ng-template>
+        </td>
+        <td>
+          <ng-container *ngIf="row.isEditing; else rawGleedsTotalRateText">
+            <input type="number" [(ngModel)]="row.gleedsTotalRate" />
+          </ng-container>
+          <ng-template #rawGleedsTotalRateText>{{ row.gleedsTotalRate | number: '1.2-2' }}</ng-template>
         </td>
       </tr>
     </tbody>
-  </table>
+    </table>
+  </div>
 
   <div class="footer">
     <span>{{ startItem }} - {{ endItem }} of {{ rows.length }} items</span>

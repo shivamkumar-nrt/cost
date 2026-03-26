@@ -1,6 +1,12 @@
 /* ─── TABLE WRAPPER (enable horizontal scroll on all screen sizes) ──── */
 .table-wrap {
+  width: 100%;
+  overflow: visible;
+}
+
+.table-scroll {
   overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   width: 100%;
 }
@@ -274,3 +280,4 @@ input[type="number"] {
     font-size: 14px;
   }
 }
+

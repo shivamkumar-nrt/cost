@@ -1,9 +1,10 @@
 <div class="table-wrap">
-  <table>
+  <div class="table-scroll">
+    <table>
     <thead>
       <tr>
         <th class="selector">
-          <input type="checkbox" [checked]="allSelected" [indeterminate]="someSelected" (change)="toggleSelectAll($event)" title="Select All" />
+          <input type="checkbox" [checked]="allSelected" [indeterminate]="someSelected" (change)="toggleSelectAll($event)" [disabled]="hasAnySelection" title="Select All" />
         </th>
         <th (click)="onSort('year')" class="sortable">Year <span class="sort-indicator" *ngIf="sortKey === 'year'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
         <th (click)="onSort('sector')" class="sortable">Sector <span class="sort-indicator" *ngIf="sortKey === 'sector'">{{ sortDirection === 'asc' ? '^' : 'v' }}</span></th>
@@ -26,13 +27,13 @@
     <tbody>
       <tr class="input-row" *ngIf="showInputRow">
         <td class="selector"></td>
-        <td><input type="text" [(ngModel)]="inputRow.year" /></td>
+        <td><app-multi-year-selector [(ngModel)]="inputRow.year"></app-multi-year-selector></td>
         <td><input type="text" [(ngModel)]="inputRow.sector" /></td>
         <td><input type="text" [(ngModel)]="inputRow.projectLocation" /></td>
-        <td><app-autocomplete [(ngModel)]="inputRow.category" [options]="categories" placeholder="Select Category" width="140px"></app-autocomplete></td>
-        <td><input type="text" [(ngModel)]="inputRow.subCategory" /></td>
-        <td><input type="text" [(ngModel)]="inputRow.moc" /></td>
-        <td><input type="text" [(ngModel)]="inputRow.shortItemSpecification" /></td>
+        <td><app-autocomplete [(ngModel)]="inputRow.category" [options]="categories" placeholder="Select Category" width="140px" (ngModelChange)="onCategoryChange(inputRow)"></app-autocomplete></td>
+        <td><app-autocomplete [(ngModel)]="inputRow.subCategory" [options]="getSubCategoryOptionsFor(inputRow.category)" placeholder="Select Sub Category" width="140px" (ngModelChange)="onSubCategoryChange(inputRow)"></app-autocomplete></td>
+        <td><app-autocomplete [(ngModel)]="inputRow.moc" [options]="getTypeOptionsFor(inputRow.subCategory)" placeholder="Select Type" width="140px" (ngModelChange)="onMocChange(inputRow)"></app-autocomplete></td>
+        <td><app-autocomplete [(ngModel)]="inputRow.shortItemSpecification" [options]="getItemOptionsFor(inputRow.moc)" placeholder="Select Item" width="160px"></app-autocomplete></td>
         <td><input type="text" [(ngModel)]="inputRow.uom" /></td>
         <td><input type="number" [(ngModel)]="inputRow.blueStarInstallationRate" /></td>
         <td><input type="number" [(ngModel)]="inputRow.blueStarTotalRate" /></td>
@@ -45,15 +46,15 @@
       </tr>
 
       <tr *ngFor="let row of pagedRows" [class.selected]="row.selected">
-        <td class="selector"><input type="checkbox" [(ngModel)]="row.selected" /></td>
+        <td class="selector"><input type="checkbox" [(ngModel)]="row.selected" (change)="onRowSelect(row)" [disabled]="!isRowSelectable(row)" /></td>
 
-        <td><ng-container *ngIf="row.isEditing; else textYear"><input type="text" [(ngModel)]="row.year" /></ng-container><ng-template #textYear>{{ row.year }}</ng-template></td>
+        <td><ng-container *ngIf="row.isEditing; else textYear"><app-multi-year-selector [(ngModel)]="row.year"></app-multi-year-selector></ng-container><ng-template #textYear>{{ row.year }}</ng-template></td>
         <td><ng-container *ngIf="row.isEditing; else textSector"><input type="text" [(ngModel)]="row.sector" /></ng-container><ng-template #textSector>{{ row.sector }}</ng-template></td>
         <td><ng-container *ngIf="row.isEditing; else textLocation"><input type="text" [(ngModel)]="row.projectLocation" /></ng-container><ng-template #textLocation>{{ row.projectLocation }}</ng-template></td>
-        <td><ng-container *ngIf="row.isEditing; else textCategory"><app-autocomplete [(ngModel)]="row.category" [options]="categories" width="140px"></app-autocomplete></ng-container><ng-template #textCategory>{{ row.category }}</ng-template></td>
-        <td><ng-container *ngIf="row.isEditing; else textSubCategory"><input type="text" [(ngModel)]="row.subCategory" /></ng-container><ng-template #textSubCategory>{{ row.subCategory }}</ng-template></td>
-        <td><ng-container *ngIf="row.isEditing; else textMoc"><input type="text" [(ngModel)]="row.moc" /></ng-container><ng-template #textMoc>{{ row.moc }}</ng-template></td>
-        <td><ng-container *ngIf="row.isEditing; else textItem"><input type="text" [(ngModel)]="row.shortItemSpecification" /></ng-container><ng-template #textItem>{{ row.shortItemSpecification }}</ng-template></td>
+        <td><ng-container *ngIf="row.isEditing; else textCategory"><app-autocomplete [(ngModel)]="row.category" [options]="categories" width="140px" (ngModelChange)="onCategoryChange(row)"></app-autocomplete></ng-container><ng-template #textCategory>{{ row.category }}</ng-template></td>
+        <td><ng-container *ngIf="row.isEditing; else textSubCategory"><app-autocomplete [(ngModel)]="row.subCategory" [options]="getSubCategoryOptionsFor(row.category)" width="140px" (ngModelChange)="onSubCategoryChange(row)"></app-autocomplete></ng-container><ng-template #textSubCategory>{{ row.subCategory }}</ng-template></td>
+        <td><ng-container *ngIf="row.isEditing; else textMoc"><app-autocomplete [(ngModel)]="row.moc" [options]="getTypeOptionsFor(row.subCategory)" width="140px" (ngModelChange)="onMocChange(row)"></app-autocomplete></ng-container><ng-template #textMoc>{{ row.moc }}</ng-template></td>
+        <td><ng-container *ngIf="row.isEditing; else textItem"><app-autocomplete [(ngModel)]="row.shortItemSpecification" [options]="getItemOptionsFor(row.moc)" width="160px"></app-autocomplete></ng-container><ng-template #textItem>{{ row.shortItemSpecification }}</ng-template></td>
         <td><ng-container *ngIf="row.isEditing; else textUom"><input type="text" [(ngModel)]="row.uom" /></ng-container><ng-template #textUom>{{ row.uom }}</ng-template></td>
 
         <td><ng-container *ngIf="row.isEditing; else textBlueStarInstallationRate"><input type="number" [(ngModel)]="row.blueStarInstallationRate" /></ng-container><ng-template #textBlueStarInstallationRate>{{ row.blueStarInstallationRate == null ? '-' : (row.blueStarInstallationRate | number: '1.2-2') }}</ng-template></td>
@@ -66,7 +67,8 @@
         <td><ng-container *ngIf="row.isEditing; else textGleedsTotalRate"><input type="number" [(ngModel)]="row.gleedsTotalRate" /></ng-container><ng-template #textGleedsTotalRate>{{ row.gleedsTotalRate == null ? '-' : (row.gleedsTotalRate | number: '1.2-2') }}</ng-template></td>
       </tr>
     </tbody>
-  </table>
+    </table>
+  </div>
 
   <div class="footer">
     <span>{{ startItem }} - {{ endItem }} of {{ rows.length }} items</span>

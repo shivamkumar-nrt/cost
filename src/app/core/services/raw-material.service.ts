@@ -1,73 +1,102 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 export interface RawMaterialRowDto {
   id: number;
   year: string;
-  location: string;
   sector: string;
+  projectLocation: string;
+  type: string;
   category: string;
-  item: string;
-  vendor: string;
+  subCategory: string;
   moc: string;
-  uom: string;
-  rate: number | null;
+  item: string;
+  itemDescription: string;
+  unit: string;
+  blueStarInstallationRate: number | null;
+  blueStarTotalRate: number | null;
+  micronTotalRate: number | null;
+  rppTotalRate: number | null;
+  listenlightsTotalRate: number | null;
+  jbTotalRate: number | null;
+  pmcTotalRate: number | null;
+  gleedsTotalRate: number | null;
 }
 
 export interface RawMaterialResponse {
-  status: string;
+  success: boolean;
   message: string;
-  payload: RawMaterialRowDto[];
-  statusCode: number;
+  data: {
+    content: RawMaterialRowDto[];
+    pageable: {
+      pageNumber: number;
+      pageSize: number;
+      offset: number;
+      paged: boolean;
+    };
+    totalElements: number;
+    totalPages: number;
+    last: boolean;
+    first: boolean;
+    numberOfElements: number;
+    empty: boolean;
+  };
+}
+
+export interface RawMaterialQueryParams {
+  vendorName?: string;
+  project?: string;
+  categoryName?: string;
+  subCategoryName?: string;
+  itemName?: string;
+  type?: string;
+  item?: string;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface RawMaterialUpsertPayload {
+  moc: string;
+  uom: string;
+  vendorName: string;
+  monthLabel: string;
+  quarterLabel: string;
+  yearLabel: string;
+  priceDate: string;
+  project: string;
+  categoryName: string;
+  subCategoryName: string;
+  itemTypeName: string;
+  itemName: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class RawMaterialService {
-  getRawMaterials(): Observable<RawMaterialResponse> {
-    return of({
-      status: 'SUCCESS',
-      message: 'OK',
-      payload: [
-        {
-          id: 1,
-          year: '2024 - 2025',
-          location: 'BLR',
-          sector: 'Real Estate',
-          category: 'test CATE',
-          item: '3 core 300 sq. mm Al arm (E)',
-          vendor: 'Blue Star Limited (R 3)',
-          moc: 'HT cable',
-          uom: 'RM',
-          rate: 2892
-        },
-        {
-          id: 2,
-          year: '2024 - 2025',
-          location: 'MUM',
-          sector: 'Real Estate',
-          category: 'test CATE',
-          item: '2 core 2.5 sq.mm Cu cable',
-          vendor: 'ABC Vendor Pvt Ltd',
-          moc: 'Cu cable',
-          uom: 'RM',
-          rate: 167
-        },
-        {
-          id: 3,
-          year: '2025 - 2026',
-          location: 'DEL',
-          sector: 'Real Estate',
-          category: 'test CATE',
-          item: 'Cu conductor unarmored cable',
-          vendor: 'Project Sunrise',
-          moc: 'Cu cable',
-          uom: 'RM',
-          rate: 2628
-        }
-      ],
-      statusCode: 200
-    }).pipe(delay(200));
+  private baseUrl = '/api/cost-items';
+
+  constructor(private http: HttpClient) {}
+
+  getRawMaterials(params: RawMaterialQueryParams = {}): Observable<RawMaterialResponse> {
+    let httpParams = new HttpParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        httpParams = httpParams.append(key, String(value));
+      }
+    });
+
+    return this.http.get<RawMaterialResponse>(`${this.baseUrl}/export`, { params: httpParams });
+  }
+
+  updateCostItem(id: number, payload: RawMaterialUpsertPayload): Observable<any> {
+    return this.http.put(`${this.baseUrl}/${id}`, payload);
+  }
+
+  deleteCostItem(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${id}`);
   }
 }

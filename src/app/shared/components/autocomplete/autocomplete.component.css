@@ -53,16 +53,12 @@
 }
 
 .dropdown-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
+  position: fixed;
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  margin-top: 4px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 2000;
   overflow-y: auto;
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95);

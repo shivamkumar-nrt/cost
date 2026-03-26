@@ -6,51 +6,97 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="modal fade" [class.show]="show" [style.display]="show ? 'block' : 'none'" tabindex="-1" role="dialog">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title">{{ title }}</h5>
-            <button type="button" class="btn-close" (click)="onCancel()" aria-label="Close"></button>
-          </div>
-          <div class="modal-body py-4">
-            <p class="mb-0 text-secondary" style="font-size: 15px;">{{ message }}</p>
-          </div>
-          <div class="modal-footer bg-light border-0">
-            <button type="button" class="btn btn-secondary px-4 py-2" (click)="onCancel()" style="font-size: 14px; font-weight: 500;">No</button>
-            <button type="button" class="btn btn-danger px-4 py-2" (click)="onConfirm()" style="font-size: 14px; font-weight: 500;">Yes, Delete</button>
-          </div>
+    <div class="confirm-overlay" *ngIf="show">
+      <div class="confirm-card" role="dialog" aria-modal="true">
+        <div class="confirm-header">
+          <h5 class="confirm-title">{{ title }}</h5>
+          <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close">×</button>
+        </div>
+        <div class="confirm-body">
+          <p class="confirm-message">{{ message }}</p>
+        </div>
+        <div class="confirm-footer">
+          <button type="button" class="btn-secondary" (click)="onCancel()">No</button>
+          <button type="button" class="btn-danger" (click)="onConfirm()">Yes, Delete</button>
         </div>
       </div>
-      <div class="modal-backdrop fade show" *ngIf="show"></div>
     </div>
   `,
   styles: [`
-    .modal.show {
-      background: rgba(0, 0, 0, 0.4);
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
     }
-    .modal-content {
-      border-radius: 12px;
+    .confirm-card {
+      background: #fff;
+      width: min(520px, 92vw);
+      border-radius: 14px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
       overflow: hidden;
     }
-    .modal-header {
-      border-bottom: 1px solid #edf2f7;
+    .confirm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
     }
-    .modal-title {
+    .confirm-title {
       font-weight: 600;
-      color: #1a202c;
+      color: #0f172a;
       font-size: 18px;
+      margin: 0;
     }
-    .modal-footer {
-      padding: 12px 20px;
+    .close-btn {
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      line-height: 1;
+      color: #64748b;
+      cursor: pointer;
+    }
+    .confirm-body {
+      padding: 18px 20px 10px;
+    }
+    .confirm-message {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+    }
+    .confirm-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 12px 20px 18px;
+    }
+    .btn-secondary {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: #f1f5f9;
     }
     .btn-danger {
-      background-color: #e53e3e;
-      border-color: #e53e3e;
+      border: none;
+      background: #dc2626;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
     }
     .btn-danger:hover {
-      background-color: #c53030;
+      background: #b91c1c;
     }
   `]
 })

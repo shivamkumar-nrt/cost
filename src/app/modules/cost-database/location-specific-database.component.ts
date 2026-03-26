@@ -8,7 +8,9 @@ import {
   CostLocationService,
   CostLocationUpsertPayload
 } from '../../core/services/cost-location.service';
+import { CatalogService, HierarchyCategory, HierarchySubCategory, HierarchyType } from '../../core/services/catalog.service';
 import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
+import { MultiYearSelectorComponent } from '../../shared/components/multi-year-selector/multi-year-selector.component';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -39,7 +41,7 @@ interface TableRow {
 @Component({
   selector: 'app-location-specific-database',
   standalone: true,
-  imports: [CommonModule, FormsModule, AutocompleteComponent],
+  imports: [CommonModule, FormsModule, AutocompleteComponent, MultiYearSelectorComponent],
   templateUrl: './location-specific-database.component.html',
   styleUrl: './location-specific-database.component.css'
 })
@@ -49,10 +51,19 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   @Input() filterVendor = '';
   @Input() filterCategory = '';
   @Input() filterKeyword = '';
+  @Input() filterSector = '';
+  @Input() filterSubCategory = '';
+  @Input() filterMoc = '';
+  @Input() filterUnit = '';
+  @Input() filterItemDescriptionLike = '';
   @Input() filterToken = 0;
   @Input() sortDirection: SortDirection = 'asc';
   @Input() sortToken = 0;
   @Input() categories: string[] = [];
+  @Input() subCategories: string[] = [];
+  @Input() itemNames: string[] = [];
+
+  catalog: HierarchyCategory[] = [];
 
   sortKey = 'blueStarTotalRate';
   showInputRow = false;
@@ -64,9 +75,13 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   readonly pageSize = 10;
   currentPage = 1;
 
-  constructor(private costLocationService: CostLocationService) {}
+  constructor(
+    private costLocationService: CostLocationService,
+    private catalogService: CatalogService
+  ) {}
 
   ngOnInit(): void {
+    this.loadCatalog();
     this.loadLocations();
   }
 
@@ -104,9 +119,21 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     return this.pagedRows.some(r => r.selected) && !this.allSelected;
   }
 
+  get hasAnySelection(): boolean {
+    return this.allRows.some(row => row.selected);
+  }
+
   toggleSelectAll(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.pagedRows.forEach(r => (r.selected = checked));
+    if (!checked) {
+      this.pagedRows.forEach(r => (r.selected = false));
+      return;
+    }
+    let first = true;
+    this.pagedRows.forEach(r => {
+      r.selected = first;
+      first = false;
+    });
   }
 
   applyFilterSort(): void {
@@ -184,6 +211,22 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
         row.isEditing = true;
       }
     });
+  }
+
+  onRowSelect(row: TableRow): void {
+    if (row.selected) {
+      this.allRows.forEach(r => {
+        if (r !== row) r.selected = false;
+      });
+      return;
+    }
+    this.allRows.forEach(r => {
+      if (r !== row) r.selected = false;
+    });
+  }
+
+  isRowSelectable(row: TableRow): boolean {
+    return !this.hasAnySelection || row.selected;
   }
 
   saveActive(): void {
@@ -269,6 +312,43 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     if (this.currentPage < this.totalPages) {
       this.currentPage += 1;
     }
+  }
+
+  hasSelectedRows(): boolean {
+    return this.allRows.some(row => row.selected);
+  }
+
+  onCategoryChange(row: TableRow): void {
+    row.subCategory = '';
+    row.moc = '';
+    row.shortItemSpecification = '';
+  }
+
+  onSubCategoryChange(row: TableRow): void {
+    row.moc = '';
+    row.shortItemSpecification = '';
+  }
+
+  onMocChange(row: TableRow): void {
+    row.shortItemSpecification = '';
+  }
+
+  getSubCategoryOptionsFor(categoryName: string): string[] {
+    const category = this.getCategoryByName(categoryName);
+    const names = category?.subCategories?.map(sub => sub.name) ?? this.getAllSubCategoryNames();
+    return this.withAll(names, this.subCategories.includes('All'));
+  }
+
+  getTypeOptionsFor(subCategoryName: string): string[] {
+    const subCategory = this.getSubCategoryByName(subCategoryName);
+    const names = subCategory?.itemTypes?.map(type => type.name) ?? this.getAllTypeNames();
+    return this.withAll(names, false);
+  }
+
+  getItemOptionsFor(typeName: string): string[] {
+    const type = this.getTypeByName(typeName);
+    const names = type?.items?.map(item => item.name) ?? this.getAllItemNames();
+    return this.withAll(names, this.itemNames.includes('All'));
   }
 
   private loadLocations(): void {
@@ -390,17 +470,17 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   private refreshRows(): void {
     const filtered = this.allRows.filter((row) => {
       const yearOk = !this.filterYear || row.year === this.filterYear;
+      const sectorOk = !this.filterSector || row.sector === this.filterSector;
       const locationOk = !this.filterLocation || row.projectLocation === this.filterLocation;
-      const vendorOk = !this.filterVendor || row.vendorName === this.filterVendor;
       const categoryOk = !this.filterCategory || row.category === this.filterCategory;
-      const search = this.filterKeyword.toLowerCase();
-      const keywordOk =
-        !search ||
-        row.shortItemSpecification.toLowerCase().includes(search) ||
-        row.vendorName.toLowerCase().includes(search) ||
-        row.moc.toLowerCase().includes(search);
+      const subCategoryOk = !this.filterSubCategory || row.subCategory === this.filterSubCategory;
+      const mocOk = !this.filterMoc || row.moc === this.filterMoc;
+      const unitOk = !this.filterUnit || row.uom === this.filterUnit;
+      const search = this.filterItemDescriptionLike.toLowerCase();
+      const itemDescOk =
+        !search || row.shortItemSpecification.toLowerCase().includes(search);
 
-      return yearOk && locationOk && vendorOk && categoryOk && keywordOk;
+      return yearOk && sectorOk && locationOk && categoryOk && subCategoryOk && mocOk && unitOk && itemDescOk;
     });
 
     this.rows = [...filtered].sort((a, b) => {
@@ -445,6 +525,100 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
       totalRate: null,
       isEditing: false
     };
+  }
+
+  private loadCatalog(): void {
+    this.catalogService.getHierarchy().subscribe({
+      next: (res) => {
+        this.catalog = res?.payload || [];
+      },
+      error: () => {
+        this.catalog = [];
+      }
+    });
+  }
+
+  private normalize(value: string): string {
+    return (value || '').trim();
+  }
+
+  private getCategoryByName(name: string): HierarchyCategory | undefined {
+    const clean = this.normalize(name);
+    if (!clean || clean === 'All') {
+      return undefined;
+    }
+    return this.catalog.find(cat => cat.name === clean);
+  }
+
+  private getSubCategoryByName(name: string): HierarchySubCategory | undefined {
+    const clean = this.normalize(name);
+    if (!clean || clean === 'All') {
+      return undefined;
+    }
+    for (const category of this.catalog) {
+      const sub = (category.subCategories || []).find(entry => entry.name === clean);
+      if (sub) {
+        return sub;
+      }
+    }
+    return undefined;
+  }
+
+  private getTypeByName(name: string): HierarchyType | undefined {
+    const clean = this.normalize(name);
+    if (!clean || clean === 'All') {
+      return undefined;
+    }
+    for (const category of this.catalog) {
+      for (const sub of category.subCategories || []) {
+        const type = (sub.itemTypes || []).find(entry => entry.name === clean);
+        if (type) {
+          return type;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private getAllSubCategoryNames(): string[] {
+    const names = new Set<string>();
+    this.catalog.forEach(category => {
+      (category.subCategories || []).forEach(sub => names.add(sub.name));
+    });
+    if (names.size === 0) {
+      return this.subCategories.filter(name => name !== 'All');
+    }
+    return Array.from(names);
+  }
+
+  private getAllTypeNames(): string[] {
+    const names = new Set<string>();
+    this.catalog.forEach(category => {
+      (category.subCategories || []).forEach(sub => {
+        (sub.itemTypes || []).forEach(type => names.add(type.name));
+      });
+    });
+    return Array.from(names);
+  }
+
+  private getAllItemNames(): string[] {
+    const names = new Set<string>();
+    this.catalog.forEach(category => {
+      (category.subCategories || []).forEach(sub => {
+        (sub.itemTypes || []).forEach(type => {
+          (type.items || []).forEach(item => names.add(item.name));
+        });
+      });
+    });
+    if (names.size === 0) {
+      return this.itemNames.filter(name => name !== 'All');
+    }
+    return Array.from(names);
+  }
+
+  private withAll(options: string[], includeAll: boolean): string[] {
+    const unique = Array.from(new Set(options.filter(name => !!name && name !== 'All')));
+    return includeAll ? ['All', ...unique] : unique;
   }
 }
 
