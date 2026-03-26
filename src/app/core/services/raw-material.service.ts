@@ -45,6 +45,9 @@ export interface RawMaterialResponse {
 }
 
 export interface RawMaterialQueryParams {
+  year?: string;
+  projectLocation?: string;
+  keyword?: string;
   vendorName?: string;
   project?: string;
   categoryName?: string;
@@ -89,7 +92,11 @@ export class RawMaterialService {
       }
     });
 
-    return this.http.get<RawMaterialResponse>(`${this.baseUrl}/export`, { params: httpParams });
+    return this.http.get<RawMaterialResponse>(this.baseUrl, { params: httpParams });
+  }
+
+  createCostItem(payload: RawMaterialUpsertPayload): Observable<any> {
+    return this.http.post(this.baseUrl, payload);
   }
 
   updateCostItem(id: number, payload: RawMaterialUpsertPayload): Observable<any> {

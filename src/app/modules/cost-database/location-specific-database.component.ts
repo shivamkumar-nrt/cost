@@ -1,9 +1,8 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import {
-  CostDatabaseResponse,
   CostLocationRecord,
   CostLocationService,
   CostLocationUpsertPayload
@@ -69,11 +68,12 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   showInputRow = false;
   inputRow: TableRow = this.createEmptyInputRow();
 
-  private allRows: TableRow[] = [];
   private originalsById = new Map<number, TableRow>();
   rows: TableRow[] = [];
   readonly pageSize = 10;
   currentPage = 1;
+  totalItems = 0;
+  totalPages = 1;
 
   constructor(
     private costLocationService: CostLocationService,
@@ -82,33 +82,32 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.loadCatalog();
-    this.loadLocations();
+    this.loadLocations(1);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['filterToken'] || changes['sortToken']) {
-      this.refreshRows();
+    if (changes['filterToken']) {
+      this.loadLocations(1);
+      return;
+    }
+    if (changes['sortToken']) {
+      this.sortRows();
     }
   }
 
   get pagedRows(): TableRow[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.rows.slice(start, start + this.pageSize);
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.rows.length / this.pageSize));
+    return this.rows;
   }
 
   get startItem(): number {
-    if (!this.rows.length) {
+    if (!this.totalItems) {
       return 0;
     }
     return (this.currentPage - 1) * this.pageSize + 1;
   }
 
   get endItem(): number {
-    return Math.min(this.currentPage * this.pageSize, this.rows.length);
+    return Math.min(this.currentPage * this.pageSize, this.totalItems);
   }
 
   get allSelected(): boolean {
@@ -120,7 +119,7 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   get hasAnySelection(): boolean {
-    return this.allRows.some(row => row.selected);
+    return this.rows.some(row => row.selected);
   }
 
   toggleSelectAll(event: Event): void {
@@ -137,7 +136,7 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   applyFilterSort(): void {
-    this.refreshRows();
+    this.loadLocations(1);
   }
 
   toggleAddRow(): void {
@@ -164,7 +163,7 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
         alert(res?.message || 'Created');
         this.showInputRow = false;
         this.inputRow = this.createEmptyInputRow();
-        this.loadLocations();
+        this.loadLocations(1);
       },
       error: (err) => {
         console.error(err);
@@ -180,11 +179,11 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
       this.sortKey = key;
       this.sortDirection = 'asc';
     }
-    this.refreshRows();
+    this.sortRows();
   }
 
   deleteSelectedRows(): void {
-    const selectedIds = this.allRows.filter(r => r.selected).map(r => r.id);
+    const selectedIds = this.rows.filter(r => r.selected).map(r => r.id);
     if (!selectedIds.length) {
       return;
     }
@@ -193,7 +192,7 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     forkJoin(deletes).subscribe({
       next: () => {
         alert('Deleted successfully.');
-        this.loadLocations();
+        this.loadLocations(this.currentPage);
       },
       error: (err) => {
         console.error(err);
@@ -215,12 +214,12 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
 
   onRowSelect(row: TableRow): void {
     if (row.selected) {
-      this.allRows.forEach(r => {
+      this.rows.forEach(r => {
         if (r !== row) r.selected = false;
       });
       return;
     }
-    this.allRows.forEach(r => {
+    this.rows.forEach(r => {
       if (r !== row) r.selected = false;
     });
   }
@@ -247,7 +246,7 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     forkJoin(updates).subscribe({
       next: () => {
         alert('Updated successfully.');
-        this.loadLocations();
+        this.loadLocations(this.currentPage);
       },
       error: (err) => {
         console.error(err);
@@ -299,23 +298,25 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   reloadData(): void {
-    this.loadLocations();
+    this.loadLocations(this.currentPage);
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage -= 1;
+      this.loadLocations(this.currentPage);
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage += 1;
+      this.loadLocations(this.currentPage);
     }
   }
 
   hasSelectedRows(): boolean {
-    return this.allRows.some(row => row.selected);
+    return this.rows.some(row => row.selected);
   }
 
   onCategoryChange(row: TableRow): void {
@@ -351,48 +352,27 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     return this.withAll(names, this.itemNames.includes('All'));
   }
 
-  private loadLocations(): void {
-    this.fetchAllLocationRows().subscribe({
+  private loadLocations(page: number): void {
+    const params = this.buildQueryParams();
+    this.costLocationService.getLocationsPage(page - 1, this.pageSize, params).subscribe({
       next: (res) => {
-        this.allRows = res.map((record) => this.mapApiToRow(record));
+        const records = res?.content || [];
+        this.rows = records.map((record) => this.mapApiToRow(record));
+        this.totalItems = res?.totalElements ?? this.rows.length;
+        this.totalPages = Math.max(res?.totalPages ?? 1, 1);
+        this.currentPage = Math.max(1, page);
         this.originalsById.clear();
-        this.refreshRows();
+        this.sortRows();
       },
       error: (err) => {
-        console.warn('Cost location API failed. Loading demo data.', err);
-        const fallback: CostDatabaseResponse<CostLocationRecord> =
-          this.costLocationService.getLocationDemoResponse();
-        this.allRows = fallback.payload.map((record) => this.mapApiToRow(record));
+        console.warn('Cost location API failed.', err);
+        this.rows = [];
+        this.totalItems = 0;
+        this.totalPages = 1;
         this.originalsById.clear();
-        this.refreshRows();
+        this.sortRows();
       }
     });
-  }
-
-  private fetchAllLocationRows(): Observable<CostLocationRecord[]> {
-    const pageSize = 200;
-    return this.costLocationService.getLocationsPage(0, pageSize).pipe(
-      switchMap((firstPage) => {
-        const firstContent = firstPage?.content || [];
-        const totalPages = Math.max(firstPage?.totalPages || 1, 1);
-        if (totalPages <= 1) {
-          return of(firstContent);
-        }
-
-        const remainingRequests: Observable<CostLocationRecord[]>[] = [];
-        for (let page = 1; page < totalPages; page += 1) {
-          remainingRequests.push(
-            this.costLocationService.getLocationsPage(page, pageSize).pipe(
-              map((response) => response?.content || [])
-            )
-          );
-        }
-
-        return forkJoin(remainingRequests).pipe(
-          map((remainingPages) => [firstContent, ...remainingPages].flat())
-        );
-      })
-    );
   }
 
   private mapApiToRow(record: CostLocationRecord): TableRow {
@@ -467,23 +447,30 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     return (value || '').replace(/\s+/g, '');
   }
 
-  private refreshRows(): void {
-    const filtered = this.allRows.filter((row) => {
-      const yearOk = !this.filterYear || row.year === this.filterYear;
-      const sectorOk = !this.filterSector || row.sector === this.filterSector;
-      const locationOk = !this.filterLocation || row.projectLocation === this.filterLocation;
-      const categoryOk = !this.filterCategory || row.category === this.filterCategory;
-      const subCategoryOk = !this.filterSubCategory || row.subCategory === this.filterSubCategory;
-      const mocOk = !this.filterMoc || row.moc === this.filterMoc;
-      const unitOk = !this.filterUnit || row.uom === this.filterUnit;
-      const search = this.filterItemDescriptionLike.toLowerCase();
-      const itemDescOk =
-        !search || row.shortItemSpecification.toLowerCase().includes(search);
+  private buildQueryParams(): {
+    year?: string;
+    sector?: string;
+    projectLocation?: string;
+    category?: string;
+    subCategory?: string;
+    moc?: string;
+    unit?: string;
+    itemDescriptionLike?: string;
+  } {
+    return {
+      year: this.normalizeYearForApi(this.filterYear || '') || undefined,
+      sector: this.filterSector || undefined,
+      projectLocation: this.filterLocation || undefined,
+      category: this.filterCategory || undefined,
+      subCategory: this.filterSubCategory || undefined,
+      moc: this.filterMoc || undefined,
+      unit: this.filterUnit || undefined,
+      itemDescriptionLike: this.filterItemDescriptionLike || undefined
+    };
+  }
 
-      return yearOk && sectorOk && locationOk && categoryOk && subCategoryOk && mocOk && unitOk && itemDescOk;
-    });
-
-    this.rows = [...filtered].sort((a, b) => {
+  private sortRows(): void {
+    this.rows = [...this.rows].sort((a, b) => {
       const aValue = (a as any)[this.sortKey];
       const bValue = (b as any)[this.sortKey];
 
@@ -497,8 +484,6 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
       }
       return factor * (aValue - bValue);
     });
-
-    this.currentPage = 1;
   }
 
   private createEmptyInputRow(): TableRow {

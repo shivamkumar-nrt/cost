@@ -1,22 +1,18 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
 import { MultiYearSelectorComponent } from '../../shared/components/multi-year-selector/multi-year-selector.component';
 import {
   RawMaterialQueryParams,
-  RawMaterialResponse,
   RawMaterialRowDto,
   RawMaterialService,
   RawMaterialUpsertPayload
 } from '../../core/services/raw-material.service';
 import {
   CatalogService,
-  HierarchyCategory,
-  HierarchyItem,
-  HierarchySubCategory,
-  HierarchyType
+  HierarchyCategory
 } from '../../core/services/catalog.service';
 
 type SortDirection = 'asc' | 'desc';
@@ -73,11 +69,12 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
   showInputRow = false;
 
   inputRow: RawMaterialRow = this.createEmptyInputRow();
-  private allRows: RawMaterialRow[] = [];
   private originalsById = new Map<number, RawMaterialRow>();
   rows: RawMaterialRow[] = [];
   readonly pageSize = 10;
   currentPage = 1;
+  totalItems = 0;
+  totalPages = 1;
   hierarchy: HierarchyCategory[] = [];
   isCatalogReady = false;
 
@@ -88,27 +85,22 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.loadCatalog();
-    this.loadRawMaterials();
+    this.loadRawMaterials(1);
   }
 
   get pagedRows(): RawMaterialRow[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.rows.slice(start, start + this.pageSize);
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.rows.length / this.pageSize));
+    return this.rows;
   }
 
   get startItem(): number {
-    if (!this.rows.length) {
+    if (!this.totalItems) {
       return 0;
     }
     return (this.currentPage - 1) * this.pageSize + 1;
   }
 
   get endItem(): number {
-    return Math.min(this.currentPage * this.pageSize, this.rows.length);
+    return Math.min(this.currentPage * this.pageSize, this.totalItems);
   }
 
   get allSelected(): boolean {
@@ -134,11 +126,11 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['filterToken']) {
-      this.loadRawMaterials();
+      this.loadRawMaterials(1);
       return;
     }
     if (changes['sortToken']) {
-      this.refreshRows();
+      this.sortRows();
     }
   }
 
@@ -147,14 +139,17 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
       return;
     }
 
-    this.allRows.unshift({
-      ...this.inputRow,
-      id: Date.now(),
-      selected: true
+    this.rawMaterialService.createCostItem(this.toPayload(this.inputRow)).subscribe({
+      next: () => {
+        this.inputRow = this.createEmptyInputRow();
+        this.showInputRow = false;
+        this.loadRawMaterials(1);
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err?.error?.message || 'Failed to create record.');
+      }
     });
-    this.inputRow = this.createEmptyInputRow();
-    this.showInputRow = false;
-    this.refreshRows();
   }
 
   toggleAddRow(): void {
@@ -170,7 +165,7 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
   }
 
   applyFilterSort(): void {
-    this.refreshRows();
+    this.loadRawMaterials(1);
   }
 
   toggleEdit(row: RawMaterialRow): void {
@@ -179,7 +174,7 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
 
   onRowSelect(row: RawMaterialRow): void {
     if (row.selected) {
-      this.allRows.forEach(r => {
+      this.rows.forEach(r => {
         if (r !== row) r.selected = false;
       });
     }
@@ -192,11 +187,11 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
       this.sortKey = key;
       this.sortDirection = 'asc';
     }
-    this.refreshRows();
+    this.sortRows();
   }
 
   deleteSelectedRows(): void {
-    const selectedIds = this.allRows.filter(row => row.selected).map(row => row.id);
+    const selectedIds = this.rows.filter(row => row.selected).map(row => row.id);
     if (!selectedIds.length) {
       return;
     }
@@ -205,7 +200,7 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
     forkJoin(deletes).subscribe({
       next: () => {
         alert('Deleted successfully.');
-        this.loadRawMaterials();
+        this.loadRawMaterials(this.currentPage);
       },
       error: (err) => {
         console.error(err);
@@ -240,7 +235,7 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
       forkJoin(updates).subscribe({
         next: () => {
           alert('Updated successfully.');
-          this.loadRawMaterials();
+          this.loadRawMaterials(this.currentPage);
         },
         error: (err) => {
           console.error(err);
@@ -273,62 +268,53 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
     }
     row.isEditing = false;
     row.selected = false;
-    this.refreshRows();
+    this.sortRows();
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage -= 1;
+      this.loadRawMaterials(this.currentPage);
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage += 1;
+      this.loadRawMaterials(this.currentPage);
     }
   }
 
   hasSelectedRows(): boolean {
-    return this.allRows.some(row => row.selected);
+    return this.rows.some(row => row.selected);
   }
 
-  private loadRawMaterials(): void {
-    this.fetchAllRawMaterialRows().subscribe({
-      next: (rows) => {
-        this.allRows = rows.map((row) => this.mapApiRow(row));
+  private loadRawMaterials(page: number): void {
+    const params = this.buildQueryParams(page);
+    this.rawMaterialService.getRawMaterials(params).subscribe({
+      next: (response) => {
+        const payload = response?.data;
+        const content = payload?.content ?? [];
+        this.rows = content.map((row) => this.mapApiRow(row));
+        this.totalItems = payload?.totalElements ?? this.rows.length;
+        this.totalPages = Math.max(payload?.totalPages ?? 1, 1);
+        this.currentPage = Math.max(1, page);
         this.originalsById.clear();
-        this.refreshRows();
+        this.sortRows();
       },
       error: (err) => {
         console.error('Failed to load raw material data', err);
-        const fallback = this.getFallbackRows();
-        this.allRows = fallback.map((row) => this.mapApiRow(row));
+        this.rows = [];
+        this.totalItems = 0;
+        this.totalPages = 1;
         this.originalsById.clear();
-        this.refreshRows();
+        this.sortRows();
       }
     });
   }
 
-  private refreshRows(): void {
-    const filterYearNormalized = this.normalizeYearForApi(this.filterYear || '');
-    const yearRange = this.parseYearRange(this.filterYear || '');
-    const filtered = this.allRows.filter((row) => {
-      const rowYearNormalized = this.normalizeYearForApi(row.year || '');
-      const yearOk = this.isYearMatch(rowYearNormalized, filterYearNormalized, yearRange);
-      const locationOk =
-        !this.filterLocation || row.projectLocation === this.filterLocation;
-      const vendorOk = true;
-      const categoryOk = !this.filterCategory || row.category === this.filterCategory;
-      const search = this.filterKeyword.toLowerCase();
-      const keywordOk =
-        !search ||
-        row.item.toLowerCase().includes(search) ||
-        row.itemDescription.toLowerCase().includes(search) ||
-        row.moc.toLowerCase().includes(search);
-      return yearOk && locationOk && vendorOk && categoryOk && keywordOk;
-    });
-
-    this.rows = filtered.sort((a, b) => {
+  private sortRows(): void {
+    this.rows = [...this.rows].sort((a, b) => {
       const aValue = (a as any)[this.sortKey];
       const bValue = (b as any)[this.sortKey];
 
@@ -342,8 +328,6 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
       }
       return factor * (aValue - bValue);
     });
-
-    this.currentPage = 1;
   }
 
   private createEmptyInputRow(): RawMaterialRow {
@@ -407,13 +391,14 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
   }
 
   private normalizeYearForApi(value: string): string {
-    const cleaned = (value || '').replace(/\s+/g, '');
-    const match = cleaned.match(/\d{4}/);
-    return match ? match[0] : cleaned;
+    return (value || '').replace(/\s+/g, '');
   }
 
-  private buildQueryParams(): RawMaterialQueryParams {
+  private buildQueryParams(page: number): RawMaterialQueryParams {
     return {
+      year: this.normalizeYearForApi(this.filterYear || '') || undefined,
+      projectLocation: this.filterLocation || undefined,
+      keyword: this.filterKeyword || undefined,
       vendorName: this.filterVendor || undefined,
       project: this.filterProject || undefined,
       categoryName: this.filterCategory || undefined,
@@ -423,8 +408,8 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
       item: this.filterItem || undefined,
       fromDate: this.filterFromDate || undefined,
       toDate: this.filterToDate || undefined,
-      page: 0,
-      size: 500
+      page: Math.max(page - 1, 0),
+      size: this.pageSize
     };
   }
 
@@ -456,105 +441,6 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
         this.isCatalogReady = false;
       }
     });
-  }
-
-  private fetchAllRawMaterialRows(): Observable<RawMaterialRowDto[]> {
-    const pageSize = 200;
-    const baseParams = this.buildQueryParams();
-    return this.rawMaterialService.getRawMaterials({ ...baseParams, page: 0, size: pageSize }).pipe(
-      switchMap((firstPage: RawMaterialResponse) => {
-        const firstContent = firstPage?.data?.content || [];
-        const totalPages = Math.max(firstPage?.data?.totalPages || 1, 1);
-        if (totalPages <= 1) {
-          return of(firstContent);
-        }
-
-        const remainingRequests: Observable<RawMaterialRowDto[]>[] = [];
-        for (let page = 1; page < totalPages; page += 1) {
-          remainingRequests.push(
-            this.rawMaterialService
-              .getRawMaterials({ ...baseParams, page, size: pageSize })
-              .pipe(map((response) => response?.data?.content || []))
-          );
-        }
-
-        return forkJoin(remainingRequests).pipe(
-          map((remainingPages) => [firstContent, ...remainingPages].flat())
-        );
-      })
-    );
-  }
-
-  private getFallbackRows(): RawMaterialRowDto[] {
-    return [
-      {
-        id: 5,
-        year: '2024-2025',
-        sector: 'Real Estate',
-        projectLocation: 'BLR',
-        type: 'ELE',
-        category: 'ELE',
-        subCategory: 'Cable',
-        moc: 'HT cable',
-        item: '3 core 300 sq. mm Al arm (E)',
-        itemDescription: '3 core 300 sq. mm Al arm (E)',
-        unit: 'RM',
-        blueStarInstallationRate: 814,
-        blueStarTotalRate: 2892,
-        micronTotalRate: 3938,
-        rppTotalRate: 3005.48,
-        listenlightsTotalRate: 4574,
-        jbTotalRate: 2464,
-        pmcTotalRate: 3500,
-        gleedsTotalRate: 3227
-      },
-      {
-        id: 8,
-        year: '2024-2025',
-        sector: 'Real Estate',
-        projectLocation: 'BLR',
-        type: 'ELE',
-        category: 'ELE',
-        subCategory: 'Cable',
-        moc: 'Cu cable',
-        item: '2 core 2.5 sq.mm Cu cable',
-        itemDescription: '2 core 2.5 sq.mm Cu cable',
-        unit: 'RM',
-        blueStarInstallationRate: 61,
-        blueStarTotalRate: 167,
-        micronTotalRate: 189,
-        rppTotalRate: 112.83,
-        listenlightsTotalRate: 445,
-        jbTotalRate: 132,
-        pmcTotalRate: 375,
-        gleedsTotalRate: 265
-      }
-    ];
-  }
-
-  private parseYearRange(value: string): { start: number; end: number } | null {
-    if (!value || !value.includes('-')) {
-      return null;
-    }
-    const parts = value.split('-').map(p => parseInt(p.trim(), 10));
-    if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) {
-      return null;
-    }
-    return { start: Math.min(parts[0], parts[1]), end: Math.max(parts[0], parts[1]) };
-  }
-
-  private isYearMatch(rowYear: string, filterYear: string, range: { start: number; end: number } | null): boolean {
-    if (!filterYear) {
-      return true;
-    }
-    if (range) {
-      const rowYearNum = parseInt(rowYear, 10);
-      if (Number.isNaN(rowYearNum)) {
-        return false;
-      }
-      return rowYearNum >= range.start && rowYearNum <= range.end;
-    }
-    return rowYear === filterYear;
   }
 
   getCategoryOptions(): string[] {

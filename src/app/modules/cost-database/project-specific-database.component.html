@@ -77,7 +77,7 @@
   </div>
 
   <div class="footer">
-    <span>{{ startItem }} - {{ endItem }} of {{ rows.length }} items</span>
+    <span>{{ startItem }} - {{ endItem }} of {{ totalItems }} items</span>
     <div class="pager">
       <button type="button" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
       <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>

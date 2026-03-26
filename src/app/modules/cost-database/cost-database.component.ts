@@ -513,13 +513,11 @@ export class CostDatabaseComponent implements OnInit {
         this.locationItemDescriptions = this.unique(records.map(r => r.itemDescription));
       },
       error: () => {
-        const fallback = this.costLocationService.getLocationDemoResponse();
-        const records = fallback?.payload || [];
-        this.locationSectors = this.unique(records.map(r => r.sector));
-        this.locationProjects = this.unique(records.map(r => r.projectLocation));
-        this.locationMocs = this.unique(records.map(r => r.moc));
-        this.locationUnits = this.unique(records.map(r => r.unit));
-        this.locationItemDescriptions = this.unique(records.map(r => r.itemDescription));
+        this.locationSectors = [];
+        this.locationProjects = [];
+        this.locationMocs = [];
+        this.locationUnits = [];
+        this.locationItemDescriptions = [];
       }
     });
   }
@@ -535,13 +533,11 @@ export class CostDatabaseComponent implements OnInit {
         this.projectItemDescriptions = this.unique(records.map(r => r.itemDescription));
       },
       error: () => {
-        const fallback = this.projectDbService.getProjectDemoResponse();
-        const records = fallback?.payload || [];
-        this.projectSectors = this.unique(records.map(r => r.sector));
-        this.projectProjects = this.unique(records.map(r => r.projectLocation));
-        this.projectMocs = this.unique(records.map(r => r.moc));
-        this.projectUnits = this.unique(records.map(r => r.unit));
-        this.projectItemDescriptions = this.unique(records.map(r => r.itemDescription));
+        this.projectSectors = [];
+        this.projectProjects = [];
+        this.projectMocs = [];
+        this.projectUnits = [];
+        this.projectItemDescriptions = [];
       }
     });
   }

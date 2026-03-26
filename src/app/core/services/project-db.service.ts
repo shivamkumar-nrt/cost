@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 export interface ProjectDbRecord {
   id: number;
@@ -30,11 +30,15 @@ export interface ProjectDbPageResponse {
   size: number;
 }
 
-export interface ProjectDbResponse<T> {
-  status: string;
-  message: string;
-  payload: T[];
-  statusCode: number;
+export interface ProjectDbQueryParams {
+  year?: string;
+  sector?: string;
+  project?: string;
+  projectLocation?: string;
+  category?: string;
+  moc?: string;
+  unit?: string;
+  itemDescriptionLike?: string;
 }
 
 export interface ProjectDbPayload {
@@ -51,52 +55,6 @@ export interface ProjectDbPayload {
   rate: number | null;
 }
 
-const PROJECT_DEMO_RESPONSE: ProjectDbResponse<ProjectDbRecord> = {
-  status: 'SUCCESS',
-  message: 'OK',
-  payload: [
-    {
-      id: 2,
-      year: '2024-2025',
-      sector: 'Real Estate',
-      projectLocation: 'BLR',
-      category: 'ELE',
-      subCategory: 'Cable',
-      moc: 'HT cable',
-      itemDescription: '3 core 300 sq. mm Al arm (E)',
-      unit: 'RM',
-      blueStarInstallationRate: 814,
-      blueStarTotalRate: 2892,
-      micronTotalRate: 3938,
-      rppTotalRate: 3005.48,
-      listenlightsTotalRate: 4574,
-      jbTotalRate: 2464,
-      pmcTotalRate: 3500,
-      gleedsTotalRate: 3227
-    },
-    {
-      id: 8,
-      year: '2024-2025',
-      sector: 'Real Estate',
-      projectLocation: 'BLR',
-      category: 'ELE',
-      subCategory: 'Cable',
-      moc: 'Cu cable',
-      itemDescription: '2 core 2.5 sq.mm Cu cable',
-      unit: 'RM',
-      blueStarInstallationRate: 61,
-      blueStarTotalRate: 167,
-      micronTotalRate: 189,
-      rppTotalRate: 112.83,
-      listenlightsTotalRate: 445,
-      jbTotalRate: 132,
-      pmcTotalRate: 375,
-      gleedsTotalRate: 265
-    }
-  ],
-  statusCode: 200
-};
-
 @Injectable({
   providedIn: 'root'
 })
@@ -105,18 +63,18 @@ export class ProjectDbService {
 
   constructor(private http: HttpClient) {}
 
-  getProjectRecordsPage(page: number, size: number): Observable<ProjectDbPageResponse> {
-    return of({
-      content: PROJECT_DEMO_RESPONSE.payload,
-      totalElements: PROJECT_DEMO_RESPONSE.payload.length,
-      totalPages: 1,
-      number: page,
-      size: size
-    }).pipe(delay(500));
-  }
-
-  getProjectDemoResponse(): ProjectDbResponse<ProjectDbRecord> {
-    return PROJECT_DEMO_RESPONSE;
+  getProjectRecordsPage(
+    page: number,
+    size: number,
+    filters: ProjectDbQueryParams = {}
+  ): Observable<ProjectDbPageResponse> {
+    let params = new HttpParams().set('page', String(page)).set('size', String(size));
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.append(key, String(value));
+      }
+    });
+    return this.http.get<ProjectDbPageResponse>(this.baseUrl, { params });
   }
 
   createProjectRecord(payload: ProjectDbPayload): Observable<any> {

@@ -36,6 +36,8 @@ export class MasterSheetComponent implements OnInit {
   tableRows: TableRow[] = [];
   categories: HierarchyCategory[] = [];
   isLoading = false;
+  readonly pageSize = 10;
+  currentPage = 1;
   
   selectedItem: TableRow | null = null;
   editMode: EditMode = null;
@@ -77,6 +79,7 @@ export class MasterSheetComponent implements OnInit {
       next: (response) => {
         this.categories = response.payload;
         this.flattenHierarchy();
+        this.currentPage = 1;
         this.isLoading = false;
       },
       error: (err) => {
@@ -159,6 +162,7 @@ export class MasterSheetComponent implements OnInit {
         });
       }
     });
+    this.ensurePageInRange();
   }
 
   toggleCategory(categoryId: number | undefined): void {
@@ -167,6 +171,7 @@ export class MasterSheetComponent implements OnInit {
     if (catRow) {
       catRow.isExpanded = !catRow.isExpanded;
     }
+    this.ensurePageInRange();
   }
 
   get visibleRows(): TableRow[] {
@@ -184,6 +189,38 @@ export class MasterSheetComponent implements OnInit {
       }
     }
     return visible;
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.visibleRows.length / this.pageSize));
+  }
+
+  get pagedRows(): TableRow[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.visibleRows.slice(start, start + this.pageSize);
+  }
+
+  get startItem(): number {
+    if (this.visibleRows.length === 0) {
+      return 0;
+    }
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.currentPage * this.pageSize, this.visibleRows.length);
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage -= 1;
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage += 1;
+    }
   }
 
   // --- Row Edit Sidebar ---
@@ -501,6 +538,16 @@ export class MasterSheetComponent implements OnInit {
       this.catalogService.getTypes(subCatId).subscribe(res => {
         if (res && res.payload) this.typeOptions = res.payload;
       });
+    }
+  }
+
+  private ensurePageInRange(): void {
+    const total = this.totalPages;
+    if (this.currentPage > total) {
+      this.currentPage = total;
+    }
+    if (this.currentPage < 1) {
+      this.currentPage = 1;
     }
   }
 }

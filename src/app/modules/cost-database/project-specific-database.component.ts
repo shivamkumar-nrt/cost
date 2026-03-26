@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import {
   ProjectDbPayload,
   ProjectDbRecord,
@@ -72,11 +72,12 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   showInputRow = false;
   inputRow: ProjectRow = this.createEmptyInputRow();
 
-  private allRows: ProjectRow[] = [];
   private originalsById = new Map<number, ProjectRow>();
   rows: ProjectRow[] = [];
   readonly pageSize = 10;
   currentPage = 1;
+  totalItems = 0;
+  totalPages = 1;
 
   constructor(
     private projectDbService: ProjectDbService,
@@ -85,33 +86,32 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.loadCatalog();
-    this.loadRows();
+    this.loadRows(1);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['filterToken'] || changes['sortToken']) {
-      this.refreshRows();
+    if (changes['filterToken']) {
+      this.loadRows(1);
+      return;
+    }
+    if (changes['sortToken']) {
+      this.sortRows();
     }
   }
 
   get pagedRows(): ProjectRow[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.rows.slice(start, start + this.pageSize);
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.rows.length / this.pageSize));
+    return this.rows;
   }
 
   get startItem(): number {
-    if (!this.rows.length) {
+    if (!this.totalItems) {
       return 0;
     }
     return (this.currentPage - 1) * this.pageSize + 1;
   }
 
   get endItem(): number {
-    return Math.min(this.currentPage * this.pageSize, this.rows.length);
+    return Math.min(this.currentPage * this.pageSize, this.totalItems);
   }
 
   get allSelected(): boolean {
@@ -123,7 +123,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   get hasAnySelection(): boolean {
-    return this.allRows.some(row => row.selected);
+    return this.rows.some(row => row.selected);
   }
 
   toggleSelectAll(event: Event): void {
@@ -140,7 +140,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   applyFilterSort(): void {
-    this.refreshRows();
+    this.loadRows(1);
   }
 
   toggleAddRow(): void {
@@ -165,7 +165,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
         alert(res?.message || 'Created');
         this.showInputRow = false;
         this.inputRow = this.createEmptyInputRow();
-        this.loadRows();
+        this.loadRows(1);
       },
       error: (err) => {
         console.error(err);
@@ -181,11 +181,11 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
       this.sortKey = key;
       this.sortDirection = 'asc';
     }
-    this.refreshRows();
+    this.sortRows();
   }
 
   deleteSelectedRows(): void {
-    const selectedIds = this.allRows.filter(r => r.selected).map(r => r.id);
+    const selectedIds = this.rows.filter(r => r.selected).map(r => r.id);
     if (!selectedIds.length) {
       return;
     }
@@ -194,7 +194,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     forkJoin(deletes).subscribe({
       next: () => {
         alert('Deleted successfully.');
-        this.loadRows();
+        this.loadRows(this.currentPage);
       },
       error: (err) => {
         console.error(err);
@@ -216,12 +216,12 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
 
   onRowSelect(row: ProjectRow): void {
     if (row.selected) {
-      this.allRows.forEach(r => {
+      this.rows.forEach(r => {
         if (r !== row) r.selected = false;
       });
       return;
     }
-    this.allRows.forEach(r => {
+    this.rows.forEach(r => {
       if (r !== row) r.selected = false;
     });
   }
@@ -248,7 +248,7 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     forkJoin(updates).subscribe({
       next: () => {
         alert('Updated successfully.');
-        this.loadRows();
+        this.loadRows(this.currentPage);
       },
       error: (err) => {
         console.error(err);
@@ -300,23 +300,25 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
   }
 
   reloadData(): void {
-    this.loadRows();
+    this.loadRows(this.currentPage);
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage -= 1;
+      this.loadRows(this.currentPage);
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage += 1;
+      this.loadRows(this.currentPage);
     }
   }
 
   hasSelectedRows(): boolean {
-    return this.allRows.some(row => row.selected);
+    return this.rows.some(row => row.selected);
   }
 
   onCategoryChange(row: ProjectRow): void {
@@ -352,47 +354,27 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     return this.withAll(names, this.itemOptions.includes('All'));
   }
 
-  private loadRows(): void {
-    this.fetchAllProjectRows().subscribe({
-      next: (records) => {
-        this.allRows = records.map((record) => this.mapToProjectRow(record));
+  private loadRows(page: number): void {
+    const params = this.buildQueryParams();
+    this.projectDbService.getProjectRecordsPage(page - 1, this.pageSize, params).subscribe({
+      next: (res) => {
+        const records = res?.content || [];
+        this.rows = records.map((record) => this.mapToProjectRow(record));
+        this.totalItems = res?.totalElements ?? this.rows.length;
+        this.totalPages = Math.max(res?.totalPages ?? 1, 1);
+        this.currentPage = Math.max(1, page);
         this.originalsById.clear();
-        this.refreshRows();
+        this.sortRows();
       },
       error: (err) => {
-        console.warn('Project DB list API failed. Loading demo data.', err);
-        const fallback = this.projectDbService.getProjectDemoResponse();
-        this.allRows = fallback.payload.map((record) => this.mapToProjectRow(record));
+        console.warn('Project DB list API failed.', err);
+        this.rows = [];
+        this.totalItems = 0;
+        this.totalPages = 1;
         this.originalsById.clear();
-        this.refreshRows();
+        this.sortRows();
       }
     });
-  }
-
-  private fetchAllProjectRows(): Observable<ProjectDbRecord[]> {
-    const pageSize = 20;
-    return this.projectDbService.getProjectRecordsPage(0, pageSize).pipe(
-      switchMap((firstPage) => {
-        const firstContent = firstPage?.content || [];
-        const totalPages = Math.max(firstPage?.totalPages || 1, 1);
-        if (totalPages <= 1) {
-          return of(firstContent);
-        }
-
-        const remainingRequests: Observable<ProjectDbRecord[]>[] = [];
-        for (let page = 1; page < totalPages; page += 1) {
-          remainingRequests.push(
-            this.projectDbService.getProjectRecordsPage(page, pageSize).pipe(
-              map((response) => response?.content || [])
-            )
-          );
-        }
-
-        return forkJoin(remainingRequests).pipe(
-          map((remainingPages) => [firstContent, ...remainingPages].flat())
-        );
-      })
-    );
   }
 
   private mapToProjectRow(record: ProjectDbRecord): ProjectRow {
@@ -473,20 +455,30 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     return (value || '').replace(/\s+/g, '');
   }
 
-  private refreshRows(): void {
-    const filtered = this.allRows.filter((row) => {
-      const yearOk = !this.filterYear || row.year === this.filterYear;
-      const sectorOk = !this.filterSector || row.sector === this.filterSector;
-      const projectOk = !this.filterProject || row.project === this.filterProject || row.projectLocation === this.filterProject;
-      const mocOk = !this.filterMoc || row.moc === this.filterMoc;
-      const unitOk = !this.filterUnit || row.uom === this.filterUnit;
-      const categoryOk = !this.filterCategory || row.category === this.filterCategory;
-      const search = this.filterItemDescriptionLike.toLowerCase();
-      const itemDescOk = !search || row.item.toLowerCase().includes(search);
-      return yearOk && sectorOk && projectOk && categoryOk && mocOk && unitOk && itemDescOk;
-    });
+  private buildQueryParams(): {
+    year?: string;
+    sector?: string;
+    project?: string;
+    projectLocation?: string;
+    category?: string;
+    moc?: string;
+    unit?: string;
+    itemDescriptionLike?: string;
+  } {
+    return {
+      year: this.normalizeYearForApi(this.filterYear || '') || undefined,
+      sector: this.filterSector || undefined,
+      project: this.filterProject || undefined,
+      projectLocation: this.filterLocation || undefined,
+      category: this.filterCategory || undefined,
+      moc: this.filterMoc || undefined,
+      unit: this.filterUnit || undefined,
+      itemDescriptionLike: this.filterItemDescriptionLike || undefined
+    };
+  }
 
-    this.rows = [...filtered].sort((a, b) => {
+  private sortRows(): void {
+    this.rows = [...this.rows].sort((a, b) => {
       const aValue = (a as any)[this.sortKey];
       const bValue = (b as any)[this.sortKey];
 
@@ -500,8 +492,6 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
       }
       return factor * (aValue - bValue);
     });
-
-    this.currentPage = 1;
   }
 
   private createEmptyInputRow(): ProjectRow {

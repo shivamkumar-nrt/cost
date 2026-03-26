@@ -46,7 +46,7 @@
           </tr>
         </thead>
         <tbody *ngIf="!isLoading">
-          <ng-container *ngFor="let row of visibleRows; let i = index">
+          <ng-container *ngFor="let row of pagedRows; let i = index">
             <!-- Category Header Row -->
             <tr *ngIf="row.isCategory" class="category-row bg-blue-light" (click)="toggleCategory(row.categoryId)">
               <td class="col-srno" data-label="Sr No."></td>
@@ -92,10 +92,10 @@
       </table>
 
       <div class="pagination">
-        <div class="page-info">1 - {{ tableRows.length }} of 40 items</div>
+        <div class="page-info">{{ startItem }} - {{ endItem }} of {{ visibleRows.length }} items</div>
         <div class="page-actions">
-          <button class="page-btn">Previous</button>
-          <button class="page-btn">Next</button>
+          <button class="page-btn" type="button" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+          <button class="page-btn" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
         </div>
       </div>
     </div>
