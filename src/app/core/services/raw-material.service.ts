@@ -4,44 +4,32 @@ import { Observable } from 'rxjs';
 
 export interface RawMaterialRowDto {
   id: number;
-  year: string;
-  sector: string;
-  projectLocation: string;
-  type: string;
-  category: string;
-  subCategory: string;
   moc: string;
-  item: string;
-  itemDescription: string;
-  unit: string;
-  blueStarInstallationRate: number | null;
-  blueStarTotalRate: number | null;
-  micronTotalRate: number | null;
-  rppTotalRate: number | null;
-  listenlightsTotalRate: number | null;
-  jbTotalRate: number | null;
-  pmcTotalRate: number | null;
-  gleedsTotalRate: number | null;
+  uom: string;
+  vendorName: string | null;
+  unitRate: number | null;
+  quarterLabel: string | null;
+  yearLabel: string | null;
+  priceDate: [number, number, number] | null;
+  project: string | null;
+  categoryName: string;
+  subCategoryName: string;
+  itemTypeName: string;
+  itemName: string;
 }
 
 export interface RawMaterialResponse {
-  success: boolean;
+  status: string;
   message: string;
-  data: {
-    content: RawMaterialRowDto[];
-    pageable: {
-      pageNumber: number;
-      pageSize: number;
-      offset: number;
-      paged: boolean;
-    };
-    totalElements: number;
-    totalPages: number;
-    last: boolean;
-    first: boolean;
-    numberOfElements: number;
-    empty: boolean;
-  };
+  payload: RawMaterialRowDto[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+  empty: boolean;
 }
 
 export interface RawMaterialQueryParams {

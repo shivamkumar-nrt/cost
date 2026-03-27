@@ -301,11 +301,10 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
     const params = this.buildQueryParams(page);
     this.rawMaterialService.getRawMaterials(params).subscribe({
       next: (response) => {
-        const payload = response?.data;
-        const content = payload?.content ?? [];
+        const content = response?.payload ?? [];
         this.rows = content.map((row) => this.mapApiRow(row));
-        this.totalItems = payload?.totalElements ?? this.rows.length;
-        this.totalPages = Math.max(payload?.totalPages ?? 1, 1);
+        this.totalItems = response?.totalElements ?? this.rows.length;
+        this.totalPages = Math.max(response?.totalPages ?? 1, 1);
         this.currentPage = Math.max(1, page);
         this.originalsById.clear();
         this.sortRows();
@@ -368,26 +367,33 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
     return {
       id: row.id,
       selected: false,
-      year: this.normalizeYearForDisplay(row.year),
-      sector: row.sector || '',
-      projectLocation: row.projectLocation || '',
-      type: row.type || '',
-      category: row.category || '',
-      subCategory: row.subCategory || '',
-      item: row.item || '',
-      itemDescription: row.itemDescription || '',
+      year: this.normalizeYearForDisplay(row.yearLabel || this.yearFromPriceDate(row.priceDate)),
+      sector: '',
+      projectLocation: row.project || '',
+      type: row.itemTypeName || '',
+      category: row.categoryName || '',
+      subCategory: row.subCategoryName || '',
+      item: row.itemName || '',
+      itemDescription: row.itemName || '',
       moc: row.moc || '',
-      unit: row.unit || '',
-      blueStarInstallationRate: row.blueStarInstallationRate ?? null,
-      blueStarTotalRate: row.blueStarTotalRate ?? null,
-      micronTotalRate: row.micronTotalRate ?? null,
-      rppTotalRate: row.rppTotalRate ?? null,
-      listenlightsTotalRate: row.listenlightsTotalRate ?? null,
-      jbTotalRate: row.jbTotalRate ?? null,
-      pmcTotalRate: row.pmcTotalRate ?? null,
-      gleedsTotalRate: row.gleedsTotalRate ?? null,
+      unit: row.uom || '',
+      blueStarInstallationRate: null,
+      blueStarTotalRate: row.unitRate ?? null,
+      micronTotalRate: null,
+      rppTotalRate: null,
+      listenlightsTotalRate: null,
+      jbTotalRate: null,
+      pmcTotalRate: null,
+      gleedsTotalRate: null,
       isEditing: false
     };
+  }
+
+  private yearFromPriceDate(priceDate: [number, number, number] | null): string {
+    if (!priceDate || priceDate.length < 1) {
+      return '';
+    }
+    return String(priceDate[0]);
   }
 
   private normalizeYearForDisplay(value: string): string {
