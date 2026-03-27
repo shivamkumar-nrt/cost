@@ -82,6 +82,7 @@ export interface RawMaterialUpsertPayload {
 export class RawMaterialService {
   private baseUrl = '/api/cost-items';
   private exportUrl = '/api/cost-items/export';
+  private importUrl = '/api/cost-import/import';
 
   constructor(private http: HttpClient) {}
 
@@ -106,5 +107,12 @@ export class RawMaterialService {
 
   deleteCostItem(id: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/${id}`);
+  }
+
+  importRawMaterials(file: File, insertType: 'append' | 'replace'): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('insertType', insertType);
+    return this.http.post<any>(this.importUrl, formData);
   }
 }

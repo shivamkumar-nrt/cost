@@ -293,6 +293,10 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
     return this.showInputRow;
   }
 
+  reloadData(): void {
+    this.loadRawMaterials(this.currentPage);
+  }
+
   private loadRawMaterials(page: number): void {
     const params = this.buildQueryParams(page);
     this.rawMaterialService.getRawMaterials(params).subscribe({

@@ -7,6 +7,7 @@ import { RawMaterialDatabaseComponent } from './raw-material-database.component'
 import { CostLocationService } from '../../core/services/cost-location.service';
 import { CatalogService, HierarchyCategory } from '../../core/services/catalog.service';
 import { ProjectDbService } from '../../core/services/project-db.service';
+import { RawMaterialService } from '../../core/services/raw-material.service';
 import { AutocompleteComponent } from '../../shared/components/autocomplete/autocomplete.component';
 import { ImportModalComponent } from './import-modal.component';
 import { MultiYearSelectorComponent } from '../../shared/components/multi-year-selector/multi-year-selector.component';
@@ -122,7 +123,8 @@ export class CostDatabaseComponent implements OnInit {
   constructor(
     private costLocationService: CostLocationService,
     private catalogService: CatalogService,
-    private projectDbService: ProjectDbService
+    private projectDbService: ProjectDbService,
+    private rawMaterialService: RawMaterialService
   ) {}
 
   get selectedYear(): string {
@@ -356,10 +358,17 @@ export class CostDatabaseComponent implements OnInit {
       return;
     }
 
-    this.costLocationService.importLocations(data.file, data.type).subscribe({
+    const importRequest =
+      this.activeTab === 'raw-material'
+        ? this.rawMaterialService.importRawMaterials(data.file, data.type)
+        : this.costLocationService.importLocations(data.file, data.type);
+
+    importRequest.subscribe({
       next: (res) => {
         alert(res?.message || 'Import completed.');
-        if (this.activeTab === 'location-specific') {
+        if (this.activeTab === 'raw-material') {
+          this.rawTab?.reloadData();
+        } else if (this.activeTab === 'location-specific') {
           this.locationTab?.reloadData();
         } else if (this.activeTab === 'project-specific') {
           this.projectTab?.reloadData();
