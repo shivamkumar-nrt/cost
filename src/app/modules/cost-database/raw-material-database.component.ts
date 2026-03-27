@@ -289,6 +289,10 @@ export class RawMaterialDatabaseComponent implements OnInit, OnChanges {
     return this.rows.some(row => row.selected);
   }
 
+  hasPendingAdd(): boolean {
+    return this.showInputRow;
+  }
+
   private loadRawMaterials(page: number): void {
     const params = this.buildQueryParams(page);
     this.rawMaterialService.getRawMaterials(params).subscribe({

@@ -619,4 +619,18 @@ export class CostDatabaseComponent implements OnInit {
     }
     return this.locationTab?.hasSelectedRows() ?? false;
   }
+
+  hasPendingAddRow(): boolean {
+    if (this.activeTab === 'raw-material') {
+      return this.rawTab?.hasPendingAdd() ?? false;
+    }
+    if (this.activeTab === 'project-specific') {
+      return this.projectTab?.hasPendingAdd() ?? false;
+    }
+    return this.locationTab?.hasPendingAdd() ?? false;
+  }
+
+  get shouldShowSave(): boolean {
+    return this.hasSelectedRows() || this.hasPendingAddRow();
+  }
 }

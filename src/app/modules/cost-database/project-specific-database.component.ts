@@ -321,6 +321,10 @@ export class ProjectSpecificDatabaseComponent implements OnInit, OnChanges {
     return this.rows.some(row => row.selected);
   }
 
+  hasPendingAdd(): boolean {
+    return this.showInputRow;
+  }
+
   onCategoryChange(row: ProjectRow): void {
     row.subPackage = '';
     row.type = '';

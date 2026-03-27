@@ -319,6 +319,10 @@ export class LocationSpecificDatabaseComponent implements OnInit, OnChanges {
     return this.rows.some(row => row.selected);
   }
 
+  hasPendingAdd(): boolean {
+    return this.showInputRow;
+  }
+
   onCategoryChange(row: TableRow): void {
     row.subCategory = '';
     row.moc = '';

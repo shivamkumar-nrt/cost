@@ -81,6 +81,7 @@ export interface RawMaterialUpsertPayload {
 })
 export class RawMaterialService {
   private baseUrl = '/api/cost-items';
+  private exportUrl = '/api/cost-items/export';
 
   constructor(private http: HttpClient) {}
 
@@ -92,7 +93,7 @@ export class RawMaterialService {
       }
     });
 
-    return this.http.get<RawMaterialResponse>(this.baseUrl, { params: httpParams });
+    return this.http.get<RawMaterialResponse>(this.exportUrl, { params: httpParams });
   }
 
   createCostItem(payload: RawMaterialUpsertPayload): Observable<any> {
