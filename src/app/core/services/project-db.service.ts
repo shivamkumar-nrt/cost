@@ -92,4 +92,11 @@ export class ProjectDbService {
   exportProjectRecords(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/export`, { responseType: 'blob' });
   }
+
+  importProjectRecords(file: File, insertType: 'append' | 'replace'): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('insertType', insertType);
+    return this.http.post<any>(`${this.baseUrl}/import`, formData);
+  }
 }

@@ -361,7 +361,9 @@ export class CostDatabaseComponent implements OnInit {
     const importRequest =
       this.activeTab === 'raw-material'
         ? this.rawMaterialService.importRawMaterials(data.file, data.type)
-        : this.costLocationService.importLocations(data.file, data.type);
+        : this.activeTab === 'project-specific'
+          ? this.projectDbService.importProjectRecords(data.file, data.type)
+          : this.costLocationService.importLocations(data.file, data.type);
 
     importRequest.subscribe({
       next: (res) => {
